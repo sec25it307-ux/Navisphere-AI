@@ -1,0 +1,385 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In — U Map</title>
+    <meta name="description" content="Sign in to U Map — your AI-powered travel and local discovery companion.">
+    <!-- Google Identity Services (GSI) -->
+    <meta name="google-signin-client_id" content="{{ google_client_id }}">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;0,14..32,900;1,14..32,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/login.css?v=20261006-v4-gsi">
+
+</head>
+
+<body class="login-body" data-auth-mode="{{ mode }}" data-google-client-id="{{ google_client_id }}">
+
+
+    <!-- ── Animated background ─────────────────────────────────── -->
+    <div class="lp-bg" aria-hidden="true">
+        <div class="lp-orb lp-orb-1"></div>
+        <div class="lp-orb lp-orb-2"></div>
+        <div class="lp-orb lp-orb-3"></div>
+        <div class="lp-grid"></div>
+        <div class="lp-noise"></div>
+    </div>
+
+    <!-- ── Top bar ─────────────────────────────────────────────── -->
+    <header class="lp-topbar">
+        <a class="lp-brand" href="/login" aria-label="U Map home">
+            <div class="lp-brand-icon" aria-hidden="true">
+                <svg viewBox="0 0 32 32" width="20" height="20" fill="none">
+                    <circle cx="16" cy="16" r="13" stroke="currentColor" stroke-width="1.8"/>
+                    <circle cx="16" cy="16" r="3" fill="currentColor"/>
+                    <path d="M16 3v4M16 25v4M3 16h4M25 16h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    <path d="M16 10.5l2 5.5 5.5.5-4 3.5 1.5 5.5L16 23l-5 2.5 1.5-5.5-4-3.5 5.5-.5z" fill="currentColor" opacity=".75"/>
+                </svg>
+            </div>
+            <div class="lp-brand-text">
+                <span class="lp-brand-name">U Map</span>
+                <span class="lp-brand-tag">AI TRAVEL</span>
+            </div>
+        </a>
+
+        <a class="lp-back-link" href="/app">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+            Back to explore
+        </a>
+    </header>
+
+    <!-- ── Main centered card area ─────────────────────────────── -->
+    <main class="lp-shell">
+        <div class="lp-panel" id="loginView" data-view="login">
+
+            <!-- Card -->
+            <div class="lp-card">
+
+                <!-- Glow accent lines -->
+                <div class="lp-card-glow-top" aria-hidden="true"></div>
+                <div class="lp-card-glow-corner" aria-hidden="true"></div>
+
+                <!-- Logo mark -->
+                <div class="lp-logo-wrap" aria-hidden="true">
+                    <div class="lp-logo-ring lp-logo-ring-outer"></div>
+                    <div class="lp-logo-ring lp-logo-ring-inner"></div>
+                    <div class="lp-logo-icon">
+                        <svg viewBox="0 0 32 32" width="22" height="22" fill="none">
+                            <circle cx="16" cy="16" r="13" stroke="currentColor" stroke-width="1.6"/>
+                            <circle cx="16" cy="16" r="2.8" fill="currentColor"/>
+                            <path d="M16 3v4M16 25v4M3 16h4M25 16h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Brand name above card heading -->
+                <p class="lp-eyebrow">U Map</p>
+
+                <!-- Heading -->
+                <h1 class="lp-heading" id="authHeading">Welcome back</h1>
+
+                <!-- Subtitle -->
+                <p class="lp-subtitle">Explore smarter. Travel safer. Discover more.</p>
+
+                <!-- ── Login form ──────────────────────────────── -->
+                <form id="loginForm" class="lp-form" novalidate autocomplete="on">
+
+                    <!-- Email -->
+                    <div class="lp-field">
+                        <label for="loginEmail" class="lp-label">Email address</label>
+                        <div class="lp-input-wrap">
+                            <span class="lp-input-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="5" width="18" height="14" rx="2.5"/>
+                                    <path d="M3 8l9 6 9-6"/>
+                                </svg>
+                            </span>
+                            <input
+                                id="loginEmail"
+                                name="email"
+                                type="email"
+                                autocomplete="email"
+                                placeholder="you@example.com"
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Password -->
+                    <div class="lp-field">
+                        <label for="loginPassword" class="lp-label">Password</label>
+                        <div class="lp-input-wrap">
+                            <span class="lp-input-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="5" y="11" width="14" height="10" rx="2.5"/>
+                                    <path d="M8 11V8a4 4 0 0 1 8 0v3"/>
+                                </svg>
+                            </span>
+                            <input
+                                id="loginPassword"
+                                name="password"
+                                type="password"
+                                autocomplete="current-password"
+                                placeholder="Enter your password"
+                                required
+                                minlength="6"
+                            >
+                            <!-- Show/hide toggle -->
+                            <button
+                                type="button"
+                                class="lp-eye-btn"
+                                data-target="loginPassword"
+                                aria-label="Show password"
+                            >
+                                <!-- Eye open -->
+                                <svg class="icon-eye" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                </svg>
+                                <!-- Eye off -->
+                                <svg class="icon-eye-off" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" hidden>
+                                    <path d="M3 3l18 18"/>
+                                    <path d="M10.6 10.6A3 3 0 0 0 12 15a3 3 0 0 0 2.4-4.4"/>
+                                    <path d="M9.9 5.2A10 10 0 0 1 12 5c6.5 0 10 7 10 7a18 18 0 0 1-3.2 3.9"/>
+                                    <path d="M6.1 6.1A18 18 0 0 0 2 12s3.5 7 10 7c1.3 0 2.5-.2 3.6-.6"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Remember me + Forgot password row -->
+                    <div class="lp-meta-row">
+                        <label class="lp-remember">
+                            <input id="rememberMe" type="checkbox">
+                            <span class="lp-checkbox-box" aria-hidden="true">
+                                <svg class="lp-check-mark" viewBox="0 0 12 10" width="10" height="10" fill="none">
+                                    <path d="M1 5l3 3 7-7" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </span>
+                            <span>Remember me</span>
+                        </label>
+                        <button type="button" class="lp-forgot-btn" id="forgotTrigger">Forgot password?</button>
+                    </div>
+
+                    <!-- Status message -->
+                    <p class="lp-status" id="loginStatus" role="status" aria-live="polite"></p>
+
+                    <!-- Sign In CTA -->
+                    <button type="submit" class="lp-submit" id="signInBtn">
+                        <span class="lp-submit-text">Sign In</span>
+                        <span class="lp-submit-arrow" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                                <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                        </span>
+                        <div class="lp-submit-shimmer" aria-hidden="true"></div>
+                    </button>
+
+                </form>
+
+                <!-- OR divider -->
+                <div class="lp-divider" role="separator">
+                    <span>OR</span>
+                </div>
+
+                <!-- Google sign-in (Google Identity Services) -->
+                <div class="lp-google-gsi-wrap" id="googleSignInWrap">
+                    <!-- GSI renders the real "Sign in with Google" button here -->
+                    <div id="g_id_onload"
+                         data-client_id="{{ google_client_id }}"
+                         data-context="signin"
+                         data-ux_mode="popup"
+                         data-callback="handleGoogleCredential"
+                         data-auto_prompt="false">
+                    </div>
+                    <div class="g_id_signin"
+                         data-type="standard"
+                         data-shape="rectangular"
+                         data-theme="outline"
+                         data-text="continue_with"
+                         data-size="large"
+                         data-logo_alignment="left"
+                         data-width="340">
+                    </div>
+                    <!-- Shown only if GSI fails to load (no internet / blocked) -->
+                    <p class="lp-gsi-fallback" id="googleFallbackMsg" hidden>
+                        Google Sign-In unavailable. Please use email &amp; password.
+                    </p>
+                </div>
+
+                <!-- Status for Google errors -->
+                <p class="lp-status" id="googleStatus" role="status" aria-live="polite"></p>
+
+
+                <!-- Create account link -->
+                <p class="lp-switch">
+                    New to U Map?
+                    <a href="/register" id="toRegister" class="lp-switch-link">Create an account</a>
+                </p>
+
+            </div><!-- /.lp-card -->
+        </div><!-- /#loginView -->
+
+        <!-- ── Register panel ─────────────────────────────────── -->
+        <div class="lp-panel" id="registerView" data-view="register" hidden>
+            <div class="lp-card">
+                <div class="lp-card-glow-top" aria-hidden="true"></div>
+                <div class="lp-card-glow-corner" aria-hidden="true"></div>
+
+                <div class="lp-logo-wrap" aria-hidden="true">
+                    <div class="lp-logo-ring lp-logo-ring-outer"></div>
+                    <div class="lp-logo-ring lp-logo-ring-inner"></div>
+                    <div class="lp-logo-icon">
+                        <svg viewBox="0 0 32 32" width="22" height="22" fill="none">
+                            <circle cx="16" cy="16" r="13" stroke="currentColor" stroke-width="1.6"/>
+                            <circle cx="16" cy="16" r="2.8" fill="currentColor"/>
+                            <path d="M16 3v4M16 25v4M3 16h4M25 16h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <p class="lp-eyebrow">U Map</p>
+                <h1 class="lp-heading">Create account</h1>
+                <p class="lp-subtitle">Join millions exploring smarter with AI-powered travel.</p>
+
+                <form id="registerForm" class="lp-form" novalidate autocomplete="on">
+
+                    <div class="lp-field">
+                        <label for="registerName" class="lp-label">Full name</label>
+                        <div class="lp-input-wrap">
+                            <span class="lp-input-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="8" r="3.2"/>
+                                    <path d="M5 19c1.4-3.2 3.8-4.8 7-4.8s5.6 1.6 7 4.8"/>
+                                </svg>
+                            </span>
+                            <input id="registerName" name="name" type="text" autocomplete="name" placeholder="Alex Traveller" required>
+                        </div>
+                    </div>
+
+                    <div class="lp-field">
+                        <label for="registerEmail" class="lp-label">Email address</label>
+                        <div class="lp-input-wrap">
+                            <span class="lp-input-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="5" width="18" height="14" rx="2.5"/>
+                                    <path d="M3 8l9 6 9-6"/>
+                                </svg>
+                            </span>
+                            <input id="registerEmail" name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+                        </div>
+                    </div>
+
+                    <div class="lp-field">
+                        <label for="registerPassword" class="lp-label">Password</label>
+                        <div class="lp-input-wrap">
+                            <span class="lp-input-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="5" y="11" width="14" height="10" rx="2.5"/>
+                                    <path d="M8 11V8a4 4 0 0 1 8 0v3"/>
+                                </svg>
+                            </span>
+                            <input id="registerPassword" name="password" type="password" autocomplete="new-password" placeholder="Create a strong password" required minlength="6">
+                            <button type="button" class="lp-eye-btn" data-target="registerPassword" aria-label="Show password">
+                                <svg class="icon-eye" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                </svg>
+                                <svg class="icon-eye-off" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" hidden>
+                                    <path d="M3 3l18 18"/><path d="M10.6 10.6A3 3 0 0 0 12 15a3 3 0 0 0 2.4-4.4"/>
+                                    <path d="M9.9 5.2A10 10 0 0 1 12 5c6.5 0 10 7 10 7a18 18 0 0 1-3.2 3.9"/>
+                                    <path d="M6.1 6.1A18 18 0 0 0 2 12s3.5 7 10 7c1.3 0 2.5-.2 3.6-.6"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <p class="lp-status" id="registerStatus" role="status" aria-live="polite"></p>
+
+                    <button type="submit" class="lp-submit">
+                        <span class="lp-submit-text">Create Account</span>
+                        <span class="lp-submit-arrow" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                        </span>
+                        <div class="lp-submit-shimmer" aria-hidden="true"></div>
+                    </button>
+                </form>
+
+                <p class="lp-switch">
+                    Already have an account?
+                    <a href="/login" id="toLogin" class="lp-switch-link">Sign In</a>
+                </p>
+            </div>
+        </div>
+
+        <!-- ── Forgot password panel ───────────────────────────── -->
+        <div class="lp-panel" id="forgotView" data-view="forgot" hidden>
+            <div class="lp-card">
+                <div class="lp-card-glow-top" aria-hidden="true"></div>
+
+                <div class="lp-logo-wrap" aria-hidden="true">
+                    <div class="lp-logo-ring lp-logo-ring-outer"></div>
+                    <div class="lp-logo-ring lp-logo-ring-inner"></div>
+                    <div class="lp-logo-icon">
+                        <svg viewBox="0 0 32 32" width="22" height="22" fill="none">
+                            <circle cx="16" cy="16" r="13" stroke="currentColor" stroke-width="1.6"/>
+                            <circle cx="16" cy="16" r="2.8" fill="currentColor"/>
+                            <path d="M16 3v4M16 25v4M3 16h4M25 16h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <p class="lp-eyebrow">U Map</p>
+                <h1 class="lp-heading">Reset password</h1>
+                <p class="lp-subtitle">Enter your email and we'll send you reset instructions.</p>
+
+                <form id="forgotForm" class="lp-form" novalidate>
+                    <div class="lp-field">
+                        <label for="forgotEmail" class="lp-label">Email address</label>
+                        <div class="lp-input-wrap">
+                            <span class="lp-input-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="5" width="18" height="14" rx="2.5"/>
+                                    <path d="M3 8l9 6 9-6"/>
+                                </svg>
+                            </span>
+                            <input id="forgotEmail" name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+                        </div>
+                    </div>
+
+                    <p class="lp-status" id="forgotStatus" role="status" aria-live="polite"></p>
+
+                    <button type="submit" class="lp-submit">
+                        <span class="lp-submit-text">Send Reset Link</span>
+                        <span class="lp-submit-arrow" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                        </span>
+                        <div class="lp-submit-shimmer" aria-hidden="true"></div>
+                    </button>
+                </form>
+
+                <p class="lp-switch">
+                    Remembered it?
+                    <button type="button" id="backToLogin" class="lp-switch-link lp-btn-reset">Back to Sign In</button>
+                </p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ── Floating particles (decorative) ───────────────────── -->
+    <div class="lp-particles" aria-hidden="true">
+        <div class="lp-particle"></div>
+        <div class="lp-particle"></div>
+        <div class="lp-particle"></div>
+        <div class="lp-particle"></div>
+        <div class="lp-particle"></div>
+    </div>
+
+    <script src="/static/login.js?v=20261006-v3"></script>
+
+</body>
+</html>
