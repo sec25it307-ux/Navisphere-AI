@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>U Map</title>
+
+    <link
+        rel="stylesheet"
+        href="/static/style.css?v=20260928-gemini-1"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+
+</head>
+
+<body>
+
+<header class="navbar">
+
+    <div class="brand">
+
+        <div class="brand-icon">
+            ✦
+        </div>
+
+        <div>
+            <h2>U Map</h2>
+            <span>AI</span>
+        </div>
+
+    </div>
+
+    <nav>
+
+        <a href="#explore">Explore</a>
+
+        <a href="#food">Food</a>
+
+        <a href="#routes">Routes</a>
+
+        <a href="#journeyPlanner">Journey Planner</a>
+
+    </nav>
+
+    <button
+        id="themeToggle"
+        class="theme-button"
+    >
+        🌙
+    </button>
+
+</header>
+
+
+<main>
+
+
+<!-- HERO -->
+
+<section class="hero">
+
+    <div class="hero-content">
+
+        <div class="badge">
+            ✦ AI-powered real-world orientation
+        </div>
+
+        <h1>
+            A new place
+            <span>shouldn't feel unfamiliar.</span>
+        </h1>
+
+        <p>
+            Understand any place. Find what you need.
+            Navigate with confidence.
+        </p>
+
+        <div class="hero-search">
+
+            <input
+                id="mainQuery"
+                placeholder="Search any hotel, restaurant, landmark, airport, or place worldwide..."
+            >
+
+            <input
+                id="mainLocation"
+                placeholder="City / location / country (optional)"
+            >
+
+            <button
+                type="button"
+                id="placeSearchBtn"
+                class="place-search-btn"
+                onclick="performPlaceSearch()"
+            >
+                🔍 Place Search
+            </button>
+
+            <button
+                type="button"
+                id="exploreBtn"
+                class="explore-btn"
+                onclick="performExplore()"
+            >
+                🧭 Explore
+            </button>
+
+        </div>
+
+        <div class="location-tools">
+
+            <button
+                id="locationButton"
+                class="location-button"
+                onclick="useCurrentLocation(false)"
+            >
+                📍 Use my current location
+            </button>
+
+            <button
+                class="food-near-button"
+                onclick="searchFoodNearMe()"
+            >
+                🍽️ Find food near me
+            </button>
+
+            <span
+                id="locationStatus"
+                class="location-status"
+            >
+                Location not selected
+            </span>
+
+        </div>
+
+        <div class="quick-actions">
+
+            <button onclick="quickSearch('hospitals')">
+                🏥 Hospitals
+            </button>
+
+            <button onclick="quickSearch('pharmacies')">
+                💊 Pharmacy
+            </button>
+
+            <button onclick="quickSearch('vegetarian restaurants')">
+                🍽️ Food
+            </button>
+
+            <button onclick="quickSearch('ATMs')">
+                💳 ATMs
+            </button>
+
+            <button onclick="quickSearch('grocery stores')"> 
+                🛒 Groceries
+            </button>
+           
+            <button onclick="quickSearch('taxi near me')">
+    🚕 Taxi
+            </button> 
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- EXPLORE -->
+
+<section
+    id="explore"
+    class="section"
+>
+
+    <div class="section-heading">
+
+        <span>
+            01 · CITY LENS
+        </span>
+
+        <h2>
+            Explore This Place
+        </h2>
+
+        <p>
+            Discover what surrounds you using real-world
+            location data.
+        </p>
+
+    </div>
+
+
+    <div class="map-toolbar">
+
+        <button
+            id="satelliteToggle"
+            class="map-toggle"
+            onclick="toggleSatellite()"
+        >
+            🛰️ Satellite
+        </button>
+
+        <button
+            class="map-toggle"
+            onclick="useCurrentLocation(false)"
+        >
+            📍 Locate me
+        </button>
+
+        <a
+            id="currentStreetView"
+            class="map-toggle map-link"
+            href="#"
+            target="_blank"
+            rel="noopener"
+            onclick="return openCurrentStreetView()"
+        >
+            📷 Street View
+        </a>
+
+    </div>
+
+
+    <div class="explore-grid">
+
+        <div id="map"></div>
+
+
+        <div class="results-panel">
+
+            <div class="panel-header">
+
+                <h3>
+                    Nearby Places
+                </h3>
+
+                <span id="resultCount">
+                    Ready
+                </span>
+
+            </div>
+
+
+            <div id="results">
+
+                <div class="empty-state">
+
+                    <div>
+                        🧭
+                    </div>
+
+                    <h3>
+                        Tell U Map what you need
+                    </h3>
+
+                    <p>
+                        Search for places, services,
+                        food or essentials.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="visual-grounding">
+
+        <div class="visual-card">
+
+            <span class="visual-icon">
+                🛰️
+            </span>
+
+            <div>
+
+                <strong>
+                    Satellite context
+                </strong>
+
+                <p>
+                    Switch the map to aerial imagery to understand
+                    buildings, roads and the surrounding area.
+                </p>
+
+            </div>
+
+            <button
+                class="visual-button"
+                onclick="toggleSatellite()"
+            >
+                View satellite
+            </button>
+
+        </div>
+
+
+        <div class="visual-card">
+
+            <span class="visual-icon">
+                📷
+            </span>
+
+            <div>
+
+                <strong>
+                    Real street-level view
+                </strong>
+
+                <p>
+                    Open the closest available Google Street View
+                    panorama for your location or a selected place.
+                </p>
+
+            </div>
+
+            <button
+                class="visual-button"
+                onclick="openCurrentStreetView()"
+            >
+                Open 360° view
+            </button>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- U Map CHATBOT -->
+
+<section class="ai-chat-section" id="aiAssistant">
+
+    <div class="section-label">✦ U Map</div>
+
+    <h2>Your AI Travel Assistant</h2>
+
+    <p class="ai-subtitle">
+        Ask about routes, transport, destinations, food, taxis, budgets or trip planning.
+        Type your question or use the microphone.
+    </p>
+
+    <div class="ai-chat-box">
+
+        <div class="ai-chat-header">
+            <div class="ai-avatar">✦</div>
+            <div>
+                <strong>U Map</strong>
+                <span id="aiStatus">Ready</span>
+            </div>
+        </div>
+
+        <div id="aiChatMessages" class="ai-chat-messages">
+            <div class="chat-message assistant-message">
+                <div class="chat-bubble">
+                    Hi! I'm U Map 👋<br><br>
+                    Ask me anything about your journey.
+                </div>
+            </div>
+        </div>
+
+        <div id="aiVoiceStatus" class="voice-status">Voice assistant ready</div>
+
+        <div class="ai-chat-input">
+            <button id="aiVoiceButton" class="voice-button" type="button" title="Start voice assistant">🎤</button>
+            <textarea id="aiChatInput" placeholder="Ask U Map anything..." rows="1"></textarea>
+            <button id="aiChatSend" class="send-button" type="button" title="Send">➤</button>
+        </div>
+
+    </div>
+
+</section>
+
+<!-- FOOD -->
+
+<section
+    id="food"
+    class="section colored-section food-section-centered"
+>
+
+    <div class="section-heading text-center">
+
+        <span>
+            02 · SMART FOOD
+        </span>
+
+        <h2>
+            Food That Fits You
+        </h2>
+
+        <p>
+            Personalized culinary guides, top local dishes, and day-by-day food plans matched to your diet, health goals, and budget.
+        </p>
+
+    </div>
+
+
+    <!-- FOOD PREFERENCES FORM CARD -->
+    <div class="food-form-card">
+
+        <form id="foodPreferencesForm" onsubmit="event.preventDefault(); generateFoodPlan();">
+
+            <div class="food-fields-grid">
+
+                <!-- 1. Location -->
+                <div class="food-field">
+                    <label for="foodLocation">
+                        <span class="field-icon">📍</span> Destination / City
+                    </label>
+                    <div class="food-input-with-action">
+                        <input
+                            id="foodLocation"
+                            type="text"
+                            placeholder="e.g. Chennai, Delhi, Mumbai, Paris, Tokyo..."
+                            required
+                            autocomplete="off"
+                        >
+                        <button
+                            type="button"
+                            class="food-location-sync-btn"
+                            onclick="syncFoodLocation()"
+                            title="Use destination from main search or GPS"
+                        >
+                            🎯 Current
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 2. Food Preference -->
+                <div class="food-field">
+                    <label for="foodPreference">
+                        <span class="field-icon">🥗</span> Food Preference
+                    </label>
+                    <select id="foodPreference" onchange="onFoodPrefChange()">
+                        <option value="Vegetarian" selected>Vegetarian (Pure Veg)</option>
+                        <option value="Vegan">Vegan (100% Plant-Based)</option>
+                        <option value="Non-vegetarian">Non-vegetarian</option>
+                        <option value="Jain">Jain (No root vegetables, pure veg)</option>
+                        <option value="Halal">Halal (Certified Halal)</option>
+                        <option value="Eggetarian">Eggetarian</option>
+                        <option value="Any / Local Specialties">Any / Local Specialties</option>
+                    </select>
+                </div>
+
+                <!-- 3. Dietary Preference -->
+                <div class="food-field">
+                    <label for="foodDietaryPreference">
+                        <span class="field-icon">🍽️</span> Dietary Preference
+                    </label>
+                    <select id="foodDietaryPreference">
+                        <option value="Traditional Local Cuisine" selected>Traditional Local Cuisine</option>
+                        <option value="High-Protein Diet">High-Protein Diet</option>
+                        <option value="Balanced & Wholesome">Balanced & Wholesome</option>
+                        <option value="Low-Carb / Keto">Low-Carb / Keto</option>
+                        <option value="Street Food & Budget Eats">Street Food & Budget Eats</option>
+                        <option value="Cafe & Modern Fusion">Cafe & Modern Fusion</option>
+                        <option value="Clean & Organic Eating">Clean & Organic Eating</option>
+                    </select>
+                </div>
+
+                <!-- 4. Health-related Dietary Restriction -->
+                <div class="food-field">
+                    <label for="foodHealthRestriction">
+                        <span class="field-icon">🩺</span> Health / Dietary Restriction
+                    </label>
+                    <select id="foodHealthRestriction" onchange="onHealthRestrictionChange()">
+                        <option value="None" selected>None (No restrictions)</option>
+                        <option value="Low-sugar preference">Low-sugar preference</option>
+                        <option value="Lower-sodium preference">Lower-sodium preference</option>
+                        <option value="High-protein preference">High-protein preference</option>
+                        <option value="Nut allergy / Peanut-free">Nut allergy / Peanut-free</option>
+                        <option value="Gluten-free / Celiac-safe">Gluten-free / Celiac-safe</option>
+                        <option value="Lactose-free / Dairy-free">Lactose-free / Dairy-free</option>
+                        <option value="Diabetic-friendly (Low Glycemic)">Diabetic-friendly (Low Glycemic)</option>
+                        <option value="Shellfish / Seafood allergy">Shellfish / Seafood allergy</option>
+                        <option value="Other dietary restriction">Other dietary restriction (specify)</option>
+                    </select>
+                    <input
+                        id="foodHealthCustom"
+                        type="text"
+                        class="food-custom-input"
+                        placeholder="Specify health restriction or allergy..."
+                        style="display: none; margin-top: 8px;"
+                    >
+                </div>
+
+                <!-- 5. Budget -->
+                <div class="food-field">
+                    <label for="foodBudget">
+                        <span class="field-icon">💰</span> Budget (per person / day)
+                    </label>
+                    <div class="budget-input-wrap">
+                        <span>₹</span>
+                        <input
+                            id="foodBudget"
+                            type="number"
+                            min="50"
+                            step="50"
+                            inputmode="decimal"
+                            autocomplete="off"
+                            placeholder="e.g. 600"
+                            value="600"
+                            aria-label="Food budget per person per day in Indian rupees"
+                        >
+                    </div>
+                </div>
+
+                <!-- 6. Trip Duration -->
+                <div class="food-field">
+                    <label for="foodDuration">
+                        <span class="field-icon">📅</span> Trip Duration (Days)
+                    </label>
+                    <div class="duration-input-wrap">
+                        <input
+                            id="foodDuration"
+                            type="number"
+                            min="1"
+                            max="14"
+                            step="1"
+                            value="7"
+                            placeholder="e.g. 7"
+                            aria-label="Trip duration in days"
+                        >
+                        <span class="duration-unit">Days</span>
+                    </div>
+                </div>
+
+            </div>
+
+
+            <!-- HEALTH DISCLAIMER NOTE -->
+            <div class="food-health-banner">
+                <span class="banner-icon">⚕️</span>
+                <span>
+                    <strong>Health Information Notice:</strong>
+                    Health information is treated strictly as dietary preferences and restrictions. U Map does not diagnose or treat medical conditions. Always verify ingredients and preparation methods directly with restaurant staff.
+                </span>
+            </div>
+
+
+            <!-- SUBMIT ACTION -->
+            <div class="food-submit-wrap">
+                <button
+                    id="foodSubmitBtn"
+                    type="submit"
+                    class="food-btn-primary"
+                >
+                    <span id="foodBtnSpinner" class="food-btn-spinner" style="display:none;"></span>
+                    <span id="foodBtnText">✨ Generate Top Foods & Week-Long Meal Plan</span>
+                </button>
+            </div>
+
+
+            <!-- QUICK PRESET CHIPS -->
+            <div class="food-quick-presets">
+                <span class="presets-label">Popular Examples:</span>
+                <button type="button" class="preset-chip" onclick="applyFoodPreset('Chennai', 'Vegetarian', 'Traditional Local Cuisine', 'Lower-sodium preference', 500, 7)">
+                    🌱 Chennai Veg · Low-Sodium (₹500, 7D)
+                </button>
+                <button type="button" class="preset-chip" onclick="applyFoodPreset('Mumbai', 'Vegan', 'High-Protein Diet', 'Low-sugar preference', 800, 7)">
+                    🥗 Mumbai Vegan · Low-Sugar (₹800, 7D)
+                </button>
+                <button type="button" class="preset-chip" onclick="applyFoodPreset('Delhi', 'Halal', 'Traditional Local Cuisine', 'None', 900, 7)">
+                    🍗 Delhi Halal (₹900, 7D)
+                </button>
+                <button type="button" class="preset-chip" onclick="applyFoodPreset('Jaipur', 'Jain', 'Traditional Local Cuisine', 'None', 600, 5)">
+                    🍲 Jaipur Jain (₹600, 5D)
+                </button>
+                <button type="button" class="preset-chip" onclick="applyFoodPreset('Bengaluru', 'Vegetarian', 'Balanced & Wholesome', 'Nut allergy / Peanut-free', 700, 7)">
+                    🥜 Bengaluru Nut-Free (₹700, 7D)
+                </button>
+            </div>
+
+        </form>
+
+    </div>
+
+
+    <!-- LOADING STATE -->
+    <div id="foodLoading" class="food-loading-box" style="display: none;">
+        <div class="food-loader-ring"></div>
+        <h3 id="foodLoadingTitle">Crafting Your Personalized Food Experience...</h3>
+        <p id="foodLoadingSubtitle">Analyzing local dishes in <span id="foodLoadingLoc">your destination</span> matching your dietary guidelines, health preferences, and budget.</p>
+    </div>
+
+
+    <!-- RESULTS CONTAINER -->
+    <div id="foodResults" class="food-results-wrapper" style="display: none;">
+
+        <!-- Active Preference Badges & Advisory Bar -->
+        <div class="food-summary-bar">
+            <div class="summary-details">
+                <span class="summary-badge loc-badge" id="summaryLocation">📍 Destination</span>
+                <span class="summary-badge" id="summaryDiet">🥗 Diet</span>
+                <span class="summary-badge" id="summaryHealth">🩺 Health Preference</span>
+                <span class="summary-badge" id="summaryBudget">💰 Budget: ₹600/day</span>
+                <span class="summary-badge" id="summaryDuration">📅 7 Days Plan</span>
+            </div>
+            <div class="food-summary-actions">
+                <button type="button" class="food-copy-btn" onclick="copyFoodPlan()" title="Copy entire food plan to clipboard">
+                    📋 Copy Plan
+                </button>
+                <button type="button" class="food-print-btn" onclick="window.print()" title="Print meal plan">
+                    🖨️ Print
+                </button>
+            </div>
+        </div>
+
+        <!-- Allergy / Verification Warning Notice -->
+        <div id="foodAllergyNoticeBox" class="food-advisory-box" style="display:none;">
+            <div class="advisory-icon">⚠️</div>
+            <div class="advisory-content">
+                <strong>Dietary & Allergy Verification Reminder</strong>
+                <p id="foodAllergyNoticeText">
+                    Please always inform your restaurant server or kitchen staff of your specific allergies or health restrictions, and ask them to verify ingredients, cooking oils, and cross-contamination surfaces before ordering. U Map provides dietary guidance, not medical assurance.
+                </p>
+            </div>
+        </div>
+
+        <!-- Budget & Price Transparency Box -->
+        <div class="food-budget-notice-box">
+            <div class="budget-notice-icon">💡</div>
+            <div class="budget-notice-content">
+                <div class="budget-header-row">
+                    <strong>Budget Transparency & Price Estimation</strong>
+                    <span id="budgetVerdictBadge" class="budget-verdict-pill">Estimated within target</span>
+                </div>
+                <p id="budgetNoticeText">
+                    Target: <strong id="budgetTargetVal">₹600 / day</strong> · <span id="budgetAvgVal">Estimated Daily Average: ₹540 - ₹620</span>.
+                    <span class="price-disclaimer-highlight">
+                        * All meal prices shown are realistic local dining estimates. Exact menu prices and taxes vary by restaurant. U Map never invents restaurant pricing or guarantees table availability.
+                    </span>
+                </p>
+            </div>
+        </div>
+
+
+        <!-- SECTION 1: TOP FOODS TO TRY -->
+        <div class="food-section-block">
+            <div class="block-heading text-center">
+                <div class="block-pill">🌟 MUST-TRY SPECIALTIES</div>
+                <h3 id="topFoodsHeading">Top Foods to Try</h3>
+                <p id="topFoodsSub">Handpicked regional dishes strictly matching your diet and health preferences.</p>
+            </div>
+
+            <div id="topFoodsGrid" class="top-foods-grid">
+                <!-- Dynamically populated top food cards -->
+            </div>
+        </div>
+
+
+        <!-- SECTION 2: WEEK-LONG / MULTI-DAY MEAL PLAN -->
+        <div class="food-section-block">
+            <div class="block-heading text-center">
+                <div class="block-pill">📅 COMPLETE ITINERARY</div>
+                <h3 id="mealPlanHeading">Day-by-Day Personalized Food Plan</h3>
+                <p id="mealPlanSub">Every day includes Breakfast, Lunch, Dinner, and an Optional Snack without repetitive meals.</p>
+            </div>
+
+            <!-- Day Selector Pills -->
+            <div id="daySelectorTabs" class="day-selector-pills">
+                <!-- Dynamically populated day tabs (e.g. Day 1, Day 2 ... or View All) -->
+            </div>
+
+            <!-- Meal Plan Cards Container -->
+            <div id="mealPlanDaysContainer" class="meal-plan-days-wrap">
+                <!-- Dynamically populated day cards -->
+            </div>
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ROUTES -->
+
+<section
+    id="routes"
+    class="section"
+>
+
+    <div class="section-heading">
+
+        <span>
+            03 · SMART ROUTES
+        </span>
+
+        <h2>
+            Compare Your Journey
+        </h2>
+
+        <p>
+            Understand distance, duration and available route options.
+        </p>
+
+    </div>
+
+
+    <div class="route-box">
+
+        <input
+            id="routeStart"
+            placeholder="Starting point (any city / place worldwide)"
+        >
+
+        <div class="route-arrow">
+            →
+        </div>
+
+        <input
+            id="routeEnd"
+            placeholder="Destination (any city / place worldwide)"
+        >
+
+        <button onclick="getDirections()">
+            Compare Routes
+        </button>
+
+    </div>
+
+
+    <div id="routeResults"></div>
+
+</section>
+
+
+<!-- =========================================================
+     SMART JOURNEY PLANNER
+========================================================= -->
+
+<section class="section smart-journey-section" id="journeyPlanner">
+
+    <div class="section-heading">
+
+        <span>
+            04 · SMART JOURNEY PLANNER
+        </span>
+
+        <h2>
+            Smart Journey Planner
+        </h2>
+
+        <p>
+            Real-time multimodal navigation, intelligent route selection, and complete step-by-step connections.
+        </p>
+
+    </div>
+
+    <!-- JOURNEY SEARCH CARD -->
+    <div class="journey-search-card">
+        <form id="smartJourneyForm" onsubmit="event.preventDefault(); searchSmartJourney();">
+            <div class="journey-search-grid">
+
+                <div class="journey-field">
+                    <label for="smartJourneyFrom">From</label>
+                    <div class="journey-input-box">
+                        <span class="journey-input-icon">📍</span>
+                        <input
+                            type="text"
+                            id="smartJourneyFrom"
+                            placeholder="Starting point (e.g. Chennai, London, JFK...)"
+                            autocomplete="off"
+                            required
+                        >
+                    </div>
+                </div>
+
+                <div class="journey-swap-col">
+                    <button type="button" class="journey-swap-btn" id="smartJourneySwapBtn" title="Swap locations">
+                        ⇄
+                    </button>
+                </div>
+
+                <div class="journey-field">
+                    <label for="smartJourneyTo">To</label>
+                    <div class="journey-input-box">
+                        <span class="journey-input-icon">🏁</span>
+                        <input
+                            type="text"
+                            id="smartJourneyTo"
+                            placeholder="Destination (e.g. Avadi, Paris, Brooklyn...)"
+                            autocomplete="off"
+                            required
+                        >
+                    </div>
+                </div>
+
+                <div class="journey-field journey-date-field">
+                    <label for="smartJourneyFromDate">From Date</label>
+                    <div class="journey-input-box">
+                        <span class="journey-input-icon">📅</span>
+                        <input
+                            type="date"
+                            id="smartJourneyFromDate"
+                        >
+                    </div>
+                </div>
+
+                <div class="journey-field journey-date-field">
+                    <label for="smartJourneyToDate">To Date</label>
+                    <div class="journey-input-box">
+                        <span class="journey-input-icon">📅</span>
+                        <input
+                            type="date"
+                            id="smartJourneyToDate"
+                        >
+                    </div>
+                </div>
+
+                <div class="journey-btn-field">
+                    <button type="submit" id="smartJourneySearchBtn" class="smart-journey-search-btn">
+                        <span class="btn-spinner" id="smartJourneyBtnSpinner" style="display:none;"></span>
+                        <span class="btn-text" id="smartJourneyBtnText">Search Journey</span>
+                    </button>
+                </div>
+
+            </div>
+        </form>
+    </div>
+
+    <!-- LOADING STATE -->
+    <div id="smartJourneyLoading" class="journey-state-box journey-loading" style="display: none;">
+        <div class="journey-spinner"></div>
+        <h3>Analyzing Real-Time Multimodal Routes...</h3>
+        <p>Fetching real Google Maps navigation data across all travel modes</p>
+    </div>
+
+    <!-- ERROR STATE -->
+    <div id="smartJourneyError" class="journey-state-box journey-error" style="display: none;">
+        <div class="journey-state-icon">⚠️</div>
+        <h3 id="smartJourneyErrorTitle">Journey Calculation Notice</h3>
+        <p id="smartJourneyErrorMessage">Please enter valid locations and try again.</p>
+    </div>
+
+    <!-- RESULTS CONTAINER -->
+    <div id="smartJourneyResults" class="smart-journey-results" style="display: none;">
+
+        <!-- 1. U Map SMART ROUTE -->
+        <div class="smart-route-wrapper">
+            <div class="smart-route-header-bar">
+                <div class="smart-route-badge-title">
+                    <span class="smart-route-sparkle">✦</span>
+                    <span>U Map SMART ROUTE</span>
+                </div>
+                <span id="smartRouteCriteriaBadge" class="smart-route-criteria-badge">
+                    ⚡ Fastest Route
+                </span>
+            </div>
+
+            <div class="smart-route-card" id="smartRouteCard">
+                <!-- Dynamically populated via JavaScript -->
+            </div>
+        </div>
+
+        <!-- 2. ALL TRAVEL OPTIONS -->
+        <div class="all-travel-options-wrapper">
+            <div class="options-header-row">
+                <div>
+                    <h3>All Travel Options</h3>
+                    <p>Real route breakdowns, distance, duration, stops, and transfers</p>
+                </div>
+                <span class="options-count-badge" id="optionsCountBadge">
+                    Travel Options
+                </span>
+            </div>
+
+            <div class="travel-options-grid" id="travelOptionsGrid">
+                <!-- Dynamically populated via JavaScript -->
+            </div>
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- VISION -->
+
+<section class="vision">
+
+    <div class="vision-content">
+
+        <span>
+            U Map
+        </span>
+
+        <h2>
+            Don't just plan the trip.
+            Understand the journey.
+        </h2>
+
+        <p>
+            Explore → Discover → Navigate →
+            Decide → Validate → Adapt
+        </p>
+
+    </div>
+
+</section>
+
+
+</main>
+
+
+<!-- FOOTER -->
+
+<footer>
+
+    <div>
+
+        <strong>
+            U Map
+        </strong>
+
+        <p>
+            Understand any place. Navigate with confidence.
+        </p>
+
+    </div>
+
+
+    <div>
+        Powered by real-world search intelligence
+    </div>
+
+</footer>
+
+
+<!-- LEAFLET -->
+
+<script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+></script>
+
+
+<!-- U Map JAVASCRIPT -->
+
+<script
+    src="/static/app.js?v=20261007-smart-journey"
+></script>
+
+</body>
+
+</html>
