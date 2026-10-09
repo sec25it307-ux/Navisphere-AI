@@ -14,13 +14,25 @@
 
     <link
         rel="stylesheet"
-        href="/static/style.css?v=20260928-gemini-1"
+        href="/static/style.css?v=20261009-darkfix"
     >
 
     <link
         rel="stylesheet"
         href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
     />
+
+    <!-- Premium brand fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+    <link
+        href="https://api.fontshare.com/v2/css?f[]=clash-display@700&display=swap"
+        rel="stylesheet"
+    >
 
 </head>
 
@@ -34,9 +46,9 @@
             ✦
         </div>
 
-        <div>
-            <h2>U Map</h2>
-            <span>AI</span>
+        <div class="brand-text">
+            <h2 class="brand-name">U Map</h2>
+            <span class="brand-tag">AI</span>
         </div>
 
     </div>
@@ -599,27 +611,39 @@
     </div>
 
 
-    <!-- RESULTS CONTAINER -->
-    <div id="foodResults" class="food-results-wrapper" style="display: none;">
+    <!-- RESULTS CONTAINER / FOOD PLAN PRINT AREA -->
+    <div class="food-plan-print-area">
 
-        <!-- Active Preference Badges & Advisory Bar -->
-        <div class="food-summary-bar">
-            <div class="summary-details">
-                <span class="summary-badge loc-badge" id="summaryLocation">📍 Destination</span>
-                <span class="summary-badge" id="summaryDiet">🥗 Diet</span>
-                <span class="summary-badge" id="summaryHealth">🩺 Health Preference</span>
-                <span class="summary-badge" id="summaryBudget">💰 Budget: ₹600/day</span>
-                <span class="summary-badge" id="summaryDuration">📅 7 Days Plan</span>
+        <!-- Print-only document header -->
+        <div class="food-print-header">
+            <div class="food-print-header-top">
+                <span class="food-print-pill">03 · SMART FOOD</span>
+                <span class="food-print-brand">✦ NAVISPHERE AI</span>
             </div>
-            <div class="food-summary-actions">
-                <button type="button" class="food-copy-btn" onclick="copyFoodPlan()" title="Copy entire food plan to clipboard">
-                    📋 Copy Plan
-                </button>
-                <button type="button" class="food-print-btn" onclick="window.print()" title="Print meal plan">
-                    🖨️ Print
-                </button>
-            </div>
+            <h2 class="food-print-title">Food That Fits You · Personalized Food Plan</h2>
+            <p class="food-print-sub">Personalized culinary guide, local dishes, dietary verification, and multi-day meal itinerary.</p>
         </div>
+
+        <div id="foodResults" class="food-results-wrapper food-plan-print-area" style="display: none;">
+
+            <!-- Active Preference Badges & Advisory Bar -->
+            <div class="food-summary-bar">
+                <div class="summary-details">
+                    <span class="summary-badge loc-badge" id="summaryLocation">📍 Destination</span>
+                    <span class="summary-badge" id="summaryDiet">🥗 Diet</span>
+                    <span class="summary-badge" id="summaryHealth">🩺 Health Preference</span>
+                    <span class="summary-badge" id="summaryBudget">💰 Budget: ₹600/day</span>
+                    <span class="summary-badge" id="summaryDuration">📅 7 Days Plan</span>
+                </div>
+                <div class="food-summary-actions">
+                    <button type="button" class="food-copy-btn" onclick="copyFoodPlan()" title="Copy entire food plan to clipboard">
+                        📋 Copy Plan
+                    </button>
+                    <button type="button" class="food-print-btn" onclick="printFoodPlan()" title="Print meal plan">
+                        🖨️ Print
+                    </button>
+                </div>
+            </div>
 
         <!-- Allergy / Verification Warning Notice -->
         <div id="foodAllergyNoticeBox" class="food-advisory-box" style="display:none;">
@@ -684,6 +708,8 @@
         </div>
 
     </div>
+    </div>
+    <!-- END FOOD PLAN PRINT AREA -->
 
 </section>
 
@@ -952,7 +978,7 @@
 <!-- U Map JAVASCRIPT -->
 
 <script
-    src="/static/app.js?v=20261007-smart-journey"
+    src="/static/app.js?v=20261009-journey-fix"
 ></script>
 
 </body>
