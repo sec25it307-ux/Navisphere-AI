@@ -1629,6 +1629,12 @@ async function generateFoodPlan() {
 }
 
 function renderFoodPlanResults(data) {
+    // 0. Update print title
+    const printTitle = document.querySelector(".food-print-title");
+    if (printTitle && data.location) {
+        printTitle.textContent = `Food That Fits You · ${data.location} (${data.duration}-Day Plan)`;
+    }
+
     // 1. Update summary badges
     const summaryLoc = document.getElementById("summaryLocation");
     const summaryDiet = document.getElementById("summaryDiet");
@@ -1873,6 +1879,37 @@ function copyFoodPlan() {
         alert("Plan copied to clipboard!");
     });
 }
+
+function printFoodPlan() {
+    // Show all day cards so complete multi-day plan prints
+    const dayCards = document.querySelectorAll(".meal-day-card");
+    dayCards.forEach(card => {
+        card.style.display = "block";
+    });
+
+    document.body.classList.add("printing-food-plan");
+    window.print();
+}
+window.printFoodPlan = printFoodPlan;
+
+// Print lifecycle handlers to guarantee full multi-day food plan prints
+window.addEventListener("beforeprint", () => {
+    document.body.classList.add("printing-food-plan");
+    const dayCards = document.querySelectorAll(".meal-day-card");
+    dayCards.forEach(card => {
+        card.style.display = "block";
+    });
+});
+
+window.addEventListener("afterprint", () => {
+    document.body.classList.remove("printing-food-plan");
+    if (typeof currentActiveFoodDay !== "undefined" && currentActiveFoodDay !== "all") {
+        const dayCards = document.querySelectorAll(".meal-day-card");
+        dayCards.forEach(card => {
+            card.style.display = card.id === `foodPlanDay_${currentActiveFoodDay}` ? "block" : "none";
+        });
+    }
+});
 
 // Backwards compatibility alias
 function searchFood() {
@@ -2511,7 +2548,16 @@ async function searchSmartJourney() {
             })
         });
 
-        const data = await response.json();
+        // Safely parse JSON — guard against HTML error pages
+        let data;
+        try {
+            data = await response.json();
+        } catch (_parseErr) {
+            throw new Error(
+                `Server returned an unexpected response (HTTP ${response.status}). ` +
+                "Please make sure the server is running and try again."
+            );
+        }
 
         if (!response.ok || !data.success) {
             throw new Error(data.error || "Unable to calculate smart journey for these locations.");
@@ -3194,13 +3240,13 @@ function setupTheme() {
         () => {
 
             document.body.classList.toggle(
-                "dark-mode"
+                "dark"
             );
 
 
             const dark =
                 document.body.classList.contains(
-                    "dark-mode"
+                    "dark"
                 );
 
 
@@ -3237,7 +3283,7 @@ function setupTheme() {
         if (saved === "dark") {
 
             document.body.classList.add(
-                "dark-mode"
+                "dark"
             );
 
             button.textContent =
@@ -3520,6 +3566,98 @@ document.addEventListener(
             .replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#039;");
+    }
+
+
+    /* Convert AI markdown to clean HTML — no raw * or # shown */
+    function formatAIResponse(text) {
+
+        const safe = String(text || "");
+
+        const lines = safe.split("\n");
+
+        let html = "";
+
+        let inList = false;
+
+        for (let i = 0; i < lines.length; i++) {
+
+            let line = lines[i];
+
+            /* ---- Headings ---- */
+            if (/^#{1,3}\s/.test(line)) {
+
+                if (inList) {
+                    html += "</ul>";
+                    inList = false;
+                }
+
+                const level = line.match(/^(#{1,3})/)[1].length;
+                const content = line.replace(/^#{1,3}\s*/, "").trim();
+
+                html +=
+                    "<h" + level + " class=\"ai-heading\">" +
+                    escapeAIText(content) +
+                    "</h" + level + ">";
+
+                continue;
+            }
+
+            /* ---- Bullet points: *, -, + at line start ---- */
+            if (/^[\*\-\+]\s+/.test(line)) {
+
+                if (!inList) {
+                    html += "<ul class=\"ai-list\">";
+                    inList = true;
+                }
+
+                const content = line.replace(/^[\*\-\+]\s+/, "").trim();
+
+                html +=
+                    "<li>" +
+                    inlineFormat(escapeAIText(content)) +
+                    "</li>";
+
+                continue;
+            }
+
+            /* ---- Close list before a non-list line ---- */
+            if (inList) {
+                html += "</ul>";
+                inList = false;
+            }
+
+            /* ---- Blank line ---- */
+            if (line.trim() === "") {
+                html += "<br>";
+                continue;
+            }
+
+            /* ---- Normal paragraph line ---- */
+            html +=
+                "<p class=\"ai-para\">" +
+                inlineFormat(escapeAIText(line.trim())) +
+                "</p>";
+        }
+
+        if (inList) {
+            html += "</ul>";
+        }
+
+        return html;
+    }
+
+
+    /* Handle inline bold (**text**) and italic (*text*) safely */
+    function inlineFormat(escaped) {
+
+        return escaped
+            /* Bold: **text** or __text__ */
+            .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+            .replace(/__(.+?)__/g, "<strong>$1</strong>")
+            /* Italic: *text* or _text_ (single, not already bold) */
+            .replace(/\*([^\*]+?)\*/g, "<em>$1</em>")
+            .replace(/_([^_]+?)_/g, "<em>$1</em>");
     }
 
 
@@ -3874,12 +4012,7 @@ document.addEventListener(
 
 
                             bubble.innerHTML =
-                                escapeAIText(
-                                    fullReply
-                                ).replace(
-                                    /\n/g,
-                                    "<br>"
-                                ) +
+                                formatAIResponse(fullReply) +
                                 `
                                     <span
                                         class="ai-streaming-cursor"
@@ -3917,12 +4050,7 @@ document.addEventListener(
 
 
                 bubble.innerHTML =
-                    escapeAIText(
-                        fullReply
-                    ).replace(
-                        /\n/g,
-                        "<br>"
-                    );
+                    formatAIResponse(fullReply);
 
                 if (isVoiceSession) {
                     isVoiceSession = false;

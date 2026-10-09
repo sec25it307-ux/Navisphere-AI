@@ -224,18 +224,43 @@ body.login-body {
     gap: 1px;
 }
 .lp-brand-name {
-    font-size: 17px;
-    font-weight: 800;
-    color: var(--c-text);
-    letter-spacing: -0.01em;
-    line-height: 1.1;
-}
-.lp-brand-tag {
-    font-size: 9.5px;
+    font-family:
+        "Clash Display",
+        "Plus Jakarta Sans",
+        Inter,
+        system-ui,
+        sans-serif;
+
+    font-size: 19px;
     font-weight: 700;
-    letter-spacing: 0.16em;
+    letter-spacing: -0.035em;
+    line-height: 1;
+
+    background: linear-gradient(
+        120deg,
+        var(--c-text) 0%,
+        var(--c-indigo) 55%,
+        var(--c-violet) 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: var(--c-text);
+}
+
+.lp-brand-tag {
+    font-family:
+        "Plus Jakarta Sans",
+        Inter,
+        system-ui,
+        sans-serif;
+
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.22em;
     text-transform: uppercase;
     color: var(--c-cyan);
+    opacity: 0.8;
 }
 
 /* Back link */

@@ -1,4 +1,4 @@
-﻿:root {
+:root {
 
     --bg: #f7f9ff;
 
@@ -96,6 +96,21 @@ body.dark {
 
     --shadow:
         0 20px 60px rgba(0,0,0,.35);
+
+    background:
+        radial-gradient(
+            circle at 10% 10%,
+            rgba(124, 58, 237, .08),
+            transparent 30%
+        ),
+
+        radial-gradient(
+            circle at 90% 20%,
+            rgba(6, 182, 212, .06),
+            transparent 30%
+        ),
+
+        var(--bg);
 }
 
 
@@ -188,22 +203,75 @@ button:hover {
 }
 
 
-.brand h2 {
-
-    font-size: 18px;
-
+.brand-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
     line-height: 1;
 }
 
+.brand-name {
+    font-family:
+        "Clash Display",
+        "Plus Jakarta Sans",
+        Inter,
+        system-ui,
+        sans-serif;
 
-.brand span {
+    font-size: 20px;
 
-    font-size: 11px;
+    font-weight: 700;
+
+    letter-spacing: -0.035em;
+
+    line-height: 1;
+
+    background:
+        linear-gradient(
+            120deg,
+            var(--text) 0%,
+            var(--primary) 55%,
+            var(--primary-2) 100%
+        );
+
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+
+    /* Fallback for browsers that don't support background-clip: text */
+    color: var(--text);
+}
+
+.brand-tag {
+    font-family:
+        "Plus Jakarta Sans",
+        Inter,
+        system-ui,
+        sans-serif;
+
+    font-size: 9.5px;
+
+    font-weight: 700;
+
+    letter-spacing: 0.22em;
+
+    text-transform: uppercase;
 
     color: var(--primary);
 
-    font-weight: 800;
+    opacity: 0.75;
+}
 
+/* Legacy selectors kept for safety — scoped so they don't override new classes */
+.brand h2:not(.brand-name) {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.brand span:not(.brand-tag) {
+    font-size: 11px;
+    color: var(--primary);
+    font-weight: 800;
     letter-spacing: 2px;
 }
 
@@ -3164,6 +3232,42 @@ footer {
 .ai-streaming-cursor { animation: umapBlink 0.8s infinite; }
 @keyframes umapBlink { 50% { opacity: 0.2; } }
 @keyframes umapPulse { 50% { transform: scale(1.08); } }
+
+/* ── Formatted AI response elements ── */
+.chat-bubble .ai-heading {
+    font-size: 15px;
+    font-weight: 700;
+    margin: 10px 0 4px;
+    padding: 0;
+    line-height: 1.4;
+    color: inherit;
+}
+
+.chat-bubble .ai-heading:first-child {
+    margin-top: 2px;
+}
+
+.chat-bubble .ai-para {
+    margin: 4px 0;
+    padding: 0;
+    line-height: 1.65;
+}
+
+.chat-bubble .ai-para:first-child {
+    margin-top: 0;
+}
+
+.chat-bubble .ai-list {
+    margin: 6px 0 6px 6px;
+    padding-left: 18px;
+    list-style: disc;
+    line-height: 1.65;
+}
+
+.chat-bubble .ai-list li {
+    margin-bottom: 4px;
+    padding-left: 2px;
+}
 
 /* ── Mobile ── */
 @media (max-width: 600px) {
@@ -8263,4 +8367,599 @@ a.professional-review-user-name:hover {
         grid-template-columns: 1fr;
     }
 
-} 
+}
+
+/* =========================================================
+   PRINT ONLY FOOD PLAN - MEDIA PRINT STYLES
+   ========================================================= */
+
+/* Hide print header in normal screen UI */
+.food-print-header {
+    display: none;
+}
+
+@media print {
+    @page {
+        size: auto;
+        margin: 12mm 15mm;
+    }
+
+    /* 1. Global Reset for Printing */
+    *, *::before, *::after {
+        box-sizing: border-box !important;
+        text-shadow: none !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    html, body {
+        background: #ffffff !important;
+        color: #111827 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: auto !important;
+        overflow: visible !important;
+        font-size: 12pt !important;
+    }
+
+    /* 2. Hide ALL other page content outside .food-plan-print-area */
+    header,
+    footer,
+    nav,
+    .navbar,
+    .theme-button,
+    #themeToggle,
+    .hero,
+    .ai-chat-section,
+    #aiAssistant,
+    #services,
+    #explore,
+    #essentials,
+    #routes,
+    #journeyPlanner,
+    #travelBooking,
+    .vision,
+    .modal,
+    .review-modal-overlay,
+    .professional-reviews-modal-overlay,
+    .leaflet-control-container,
+    .food-form-card,
+    .food-presets-wrap,
+    .food-loading-box,
+    .food-location-sync-btn,
+    .food-summary-actions,
+    .day-selector-pills,
+    .route-box,
+    .route-card {
+        display: none !important;
+    }
+
+    /* Hide any direct child of body except main */
+    body > *:not(main) {
+        display: none !important;
+    }
+
+    /* Allow main to flow naturally without layout constraints */
+    main {
+        display: block !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        background: transparent !important;
+        overflow: visible !important;
+        height: auto !important;
+    }
+
+    /* Hide all sections inside main except #food */
+    main > *:not(#food) {
+        display: none !important;
+    }
+
+    /* Reset section #food */
+    #food {
+        display: block !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        border: none !important;
+        overflow: visible !important;
+        height: auto !important;
+    }
+
+    /* Hide anything in #food that is not .food-plan-print-area */
+    #food > *:not(.food-plan-print-area) {
+        display: none !important;
+    }
+
+    /* Extra safeguards when printing-food-plan class is added to body */
+    body.printing-food-plan > *:not(main) {
+        display: none !important;
+    }
+    body.printing-food-plan main > *:not(#food) {
+        display: none !important;
+    }
+    body.printing-food-plan #food > *:not(.food-plan-print-area) {
+        display: none !important;
+    }
+
+    /* 3. Wrap & display complete Food Plan print area */
+    .food-plan-print-area {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+        color: #111827 !important;
+        overflow: visible !important;
+        height: auto !important;
+    }
+
+    #foodResults,
+    .food-results-wrapper {
+        display: block !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        height: auto !important;
+    }
+
+    /* 4. Document Print Header */
+    .food-print-header {
+        display: block !important;
+        text-align: center !important;
+        margin-bottom: 22px !important;
+        padding-bottom: 16px !important;
+        border-bottom: 2px solid #e5e7eb !important;
+        break-after: avoid !important;
+        page-break-after: avoid !important;
+    }
+
+    .food-print-header-top {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 12px !important;
+        margin-bottom: 6px !important;
+    }
+
+    .food-print-pill {
+        display: inline-block !important;
+        padding: 3px 12px !important;
+        border-radius: 999px !important;
+        background: #eef2ff !important;
+        color: #4f46e5 !important;
+        border: 1px solid #c7d2fe !important;
+        font-size: 11px !important;
+        font-weight: 800 !important;
+        letter-spacing: 1px !important;
+    }
+
+    .food-print-brand {
+        font-size: 12px !important;
+        font-weight: 800 !important;
+        letter-spacing: 1.5px !important;
+        color: #4b5563 !important;
+    }
+
+    .food-print-title {
+        font-size: 22px !important;
+        font-weight: 800 !important;
+        color: #111827 !important;
+        margin: 6px 0 !important;
+    }
+
+    .food-print-sub {
+        font-size: 13px !important;
+        color: #4b5563 !important;
+        margin: 0 !important;
+    }
+
+    /* 5. Summary Badges & Dietary Information */
+    .food-summary-bar {
+        display: block !important;
+        background: #f9fafb !important;
+        border: 1px solid #e5e7eb !important;
+        border-radius: 12px !important;
+        padding: 14px 18px !important;
+        margin-bottom: 18px !important;
+        box-shadow: none !important;
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+    .summary-details {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+        justify-content: center !important;
+    }
+
+    .summary-badge {
+        display: inline-flex !important;
+        padding: 5px 12px !important;
+        border-radius: 8px !important;
+        font-size: 11.5px !important;
+        font-weight: 700 !important;
+        border: 1px solid #d1d5db !important;
+        background: #ffffff !important;
+        color: #1f2937 !important;
+    }
+
+    .summary-badge.loc-badge {
+        background: #eef2ff !important;
+        color: #4338ca !important;
+        border-color: #c7d2fe !important;
+    }
+
+    /* 6. Allergy & Health Verification Advisory */
+    .food-advisory-box {
+        display: flex !important;
+        align-items: flex-start !important;
+        gap: 12px !important;
+        background: #fffbeb !important;
+        border: 1px solid #fcd34d !important;
+        border-radius: 12px !important;
+        padding: 14px 18px !important;
+        margin-bottom: 18px !important;
+        box-shadow: none !important;
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+    .food-advisory-box .advisory-icon {
+        font-size: 20px !important;
+    }
+
+    .food-advisory-box strong {
+        color: #92400e !important;
+        font-size: 13px !important;
+        margin-bottom: 4px !important;
+    }
+
+    .food-advisory-box p {
+        color: #78350f !important;
+        font-size: 12px !important;
+        line-height: 1.45 !important;
+        margin: 0 !important;
+    }
+
+    /* 7. Budget Transparency & Pricing Estimates */
+    .food-budget-notice-box {
+        display: flex !important;
+        align-items: flex-start !important;
+        gap: 12px !important;
+        background: #ecfdf5 !important;
+        border: 1px solid #a7f3d0 !important;
+        border-radius: 12px !important;
+        padding: 14px 18px !important;
+        margin-bottom: 24px !important;
+        box-shadow: none !important;
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+    .food-budget-notice-box .budget-notice-icon {
+        font-size: 20px !important;
+    }
+
+    .budget-header-row {
+        display: flex !important;
+        align-items: center !important;
+        gap: 10px !important;
+        margin-bottom: 4px !important;
+    }
+
+    .budget-header-row strong {
+        color: #065f46 !important;
+        font-size: 13.5px !important;
+    }
+
+    .budget-verdict-pill {
+        background: #d1fae5 !important;
+        color: #047857 !important;
+        font-size: 10.5px !important;
+        font-weight: 800 !important;
+        border: 1px solid #a7f3d0 !important;
+        padding: 2px 8px !important;
+        border-radius: 999px !important;
+    }
+
+    .food-budget-notice-box p {
+        color: #064e3b !important;
+        font-size: 12px !important;
+        line-height: 1.45 !important;
+        margin: 0 !important;
+    }
+
+    .price-disclaimer-highlight {
+        color: #6b7280 !important;
+        font-size: 11px !important;
+    }
+
+    /* 8. Headings & Sections */
+    .food-section-block {
+        margin-bottom: 30px !important;
+    }
+
+    .block-heading {
+        text-align: center !important;
+        margin-bottom: 16px !important;
+        break-after: avoid !important;
+        page-break-after: avoid !important;
+    }
+
+    .block-pill {
+        display: inline-block !important;
+        background: #eef2ff !important;
+        color: #4338ca !important;
+        border: 1px solid #c7d2fe !important;
+        font-size: 10.5px !important;
+        letter-spacing: 1.2px !important;
+        padding: 3px 12px !important;
+        border-radius: 999px !important;
+        margin-bottom: 6px !important;
+    }
+
+    .block-heading h3 {
+        font-size: 20px !important;
+        font-weight: 800 !important;
+        color: #111827 !important;
+        margin: 4px 0 6px !important;
+        break-after: avoid !important;
+        page-break-after: avoid !important;
+    }
+
+    .block-heading p {
+        font-size: 12.5px !important;
+        color: #4b5563 !important;
+        margin: 0 auto !important;
+    }
+
+    /* 9. Top Foods to Try Grid */
+    .top-foods-grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 14px !important;
+    }
+
+    .top-food-card {
+        background: #ffffff !important;
+        border: 1px solid #e5e7eb !important;
+        border-radius: 14px !important;
+        padding: 16px !important;
+        box-shadow: none !important;
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+        transform: none !important;
+    }
+
+    .food-dish-name {
+        font-size: 15px !important;
+        font-weight: 800 !important;
+        color: #111827 !important;
+    }
+
+    .food-category-pill {
+        background: #f3f4f6 !important;
+        color: #4b5563 !important;
+        border: 1px solid #e5e7eb !important;
+        font-size: 10.5px !important;
+    }
+
+    .food-tags-row {
+        gap: 5px !important;
+        margin-bottom: 8px !important;
+    }
+
+    .food-tag {
+        background: #eef2ff !important;
+        color: #4338ca !important;
+        border: 1px solid #e0e7ff !important;
+        font-size: 10px !important;
+    }
+
+    .food-description {
+        color: #4b5563 !important;
+        font-size: 12px !important;
+        line-height: 1.45 !important;
+        margin-bottom: 10px !important;
+    }
+
+    .food-why-fits {
+        background: #f9fafb !important;
+        border-left: 3px solid #4f46e5 !important;
+        color: #1f2937 !important;
+        font-size: 11.5px !important;
+        padding: 8px 10px !important;
+        margin-bottom: 10px !important;
+    }
+
+    .food-card-footer {
+        border-top: 1px solid #e5e7eb !important;
+        padding-top: 10px !important;
+    }
+
+    .price-badge {
+        background: #ecfdf5 !important;
+        color: #047857 !important;
+        border: 1px solid #a7f3d0 !important;
+        font-size: 12px !important;
+    }
+
+    /* 10. Full 7-Day Plan Across Multiple Pages */
+    .meal-plan-days-wrap {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 20px !important;
+    }
+
+    .meal-day-card {
+        display: block !important;
+        background: #ffffff !important;
+        border: 1px solid #d1d5db !important;
+        border-radius: 16px !important;
+        padding: 20px !important;
+        box-shadow: none !important;
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+        margin-bottom: 24px !important;
+    }
+
+    .day-card-header {
+        border-bottom: 1px solid #e5e7eb !important;
+        padding-bottom: 12px !important;
+        margin-bottom: 14px !important;
+        break-after: avoid !important;
+        page-break-after: avoid !important;
+    }
+
+    .day-number-badge {
+        background: #4f46e5 !important;
+        color: #ffffff !important;
+        font-size: 12px !important;
+        padding: 5px 12px !important;
+    }
+
+    .day-theme-title {
+        color: #111827 !important;
+        font-size: 16px !important;
+        font-weight: 800 !important;
+    }
+
+    .day-cost-estimate .cost-val {
+        background: #ecfdf5 !important;
+        color: #047857 !important;
+        border: 1px solid #a7f3d0 !important;
+        font-size: 12px !important;
+    }
+
+    .meal-slots-grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px !important;
+    }
+
+    .meal-slot-item {
+        background: #f9fafb !important;
+        border: 1px solid #e5e7eb !important;
+        border-radius: 12px !important;
+        padding: 12px 14px !important;
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+    .slot-badge {
+        font-size: 11px !important;
+        padding: 2px 8px !important;
+        border-radius: 6px !important;
+        margin-bottom: 6px !important;
+    }
+
+    .breakfast-slot .slot-badge {
+        background: #fef3c7 !important;
+        color: #b45309 !important;
+    }
+
+    .lunch-slot .slot-badge {
+        background: #d1fae5 !important;
+        color: #047857 !important;
+    }
+
+    .dinner-slot .slot-badge {
+        background: #e0e7ff !important;
+        color: #4338ca !important;
+    }
+
+    .snack-slot .slot-badge {
+        background: #cffafe !important;
+        color: #0e7490 !important;
+    }
+
+    .meal-dish-name {
+        font-size: 13.5px !important;
+        font-weight: 800 !important;
+        color: #111827 !important;
+        margin-bottom: 4px !important;
+    }
+
+    .meal-dish-desc {
+        font-size: 11.5px !important;
+        color: #4b5563 !important;
+        line-height: 1.4 !important;
+        margin-bottom: 8px !important;
+    }
+
+    .meal-price-tag {
+        background: #ffffff !important;
+        border: 1px solid #d1d5db !important;
+        color: #111827 !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
+    }
+
+    /* 11. Dark mode override in print */
+    body.dark,
+    body.dark main,
+    body.dark #food,
+    body.dark .food-plan-print-area,
+    body.dark .meal-day-card,
+    body.dark .top-food-card,
+    body.dark .meal-slot-item {
+        background: #ffffff !important;
+        color: #111827 !important;
+    }
+
+    body.dark .food-dish-name,
+    body.dark .day-theme-title,
+    body.dark .meal-dish-name,
+    body.dark .block-heading h3,
+    body.dark .food-print-title {
+        color: #111827 !important;
+    }
+
+    body.dark .food-description,
+    body.dark .meal-dish-desc,
+    body.dark .block-heading p,
+    body.dark .food-print-sub {
+        color: #4b5563 !important;
+    }
+
+    body.dark .food-advisory-box {
+        background: #fffbeb !important;
+        border-color: #fcd34d !important;
+    }
+
+    body.dark .food-advisory-box strong {
+        color: #92400e !important;
+    }
+
+    body.dark .food-advisory-box p {
+        color: #78350f !important;
+    }
+
+    body.dark .food-budget-notice-box {
+        background: #ecfdf5 !important;
+        border-color: #a7f3d0 !important;
+    }
+
+    body.dark .budget-header-row strong {
+        color: #065f46 !important;
+    }
+
+    body.dark .budget-verdict-pill {
+        background: #d1fae5 !important;
+        color: #047857 !important;
+    }
+
+    body.dark .food-budget-notice-box p {
+        color: #064e3b !important;
+    }
+}
