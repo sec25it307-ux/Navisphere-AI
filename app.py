@@ -4,8 +4,6 @@ import json
 import re
 import requests 
 import datetime
-import time
-from concurrent.futures import ThreadPoolExecutor
 
 from google import genai
 from google.genai import types
@@ -22,8 +20,8 @@ app = Flask(__name__)
 # API KEY
 # =========================================================
 
-SERPAPI_KEY = (os.getenv("SERPAPI_KEY") or "").strip()
-GEMINI_API_KEY = (os.getenv("GEMINI_API_KEY") or "").strip()
+SERPAPI_KEY = os.getenv("SERPAPI_KEY")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 # Use Google's native GenAI SDK. This avoids the OpenAI-compatible
 # compatibility layer and lets the chatbot use native streaming.
@@ -131,9 +129,38 @@ TRANSPORTS = {
 # HOME
 # =========================================================
 
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
+
 @app.route("/")
 def home():
     return redirect(url_for("login"))
+
+
+# =========================================================
+# LOGIN / REGISTER
+# =========================================================
+
+@app.route("/login")
+def login():
+    return render_template(
+        "login.html",
+        mode="login",
+        google_client_id=GOOGLE_CLIENT_ID
+    )
+
+
+@app.route("/register")
+def register():
+    return render_template(
+        "login.html",
+        mode="register",
+        google_client_id=GOOGLE_CLIENT_ID
+    )
+
+
+@app.route("/app")
+def app_page():
+    return render_template("index.html")
 
 
 # =========================================================
@@ -145,122 +172,11 @@ def health():
 
     return jsonify({
         "success": True,
-        "message": "U Map backend is running",
+        "message": "NaviSphere AI backend is running",
         "serpapi_configured": bool(SERPAPI_KEY),
         "gemini_configured": bool(GEMINI_API_KEY),
         "openai": "disabled"
     })
-
-
-# =========================================================
-# AUTH — LOGIN / REGISTER / APP
-# =========================================================
-
-GOOGLE_CLIENT_ID = (os.getenv("GOOGLE_CLIENT_ID") or "").strip()
-
-
-@app.route("/login")
-def login():
-    """Render the login page."""
-    return render_template(
-        "login.html",
-        mode="login",
-        google_client_id=GOOGLE_CLIENT_ID
-    )
-
-
-@app.route("/register")
-def register():
-    """Render the registration view of the login page."""
-    return render_template(
-        "login.html",
-        mode="register",
-        google_client_id=GOOGLE_CLIENT_ID
-    )
-
-
-@app.route("/app")
-def app_page():
-    """Render the main U Map app."""
-    return render_template("index.html")
-
-
-# =========================================================
-# GOOGLE IDENTITY SERVICES — Credential Verification
-# =========================================================
-
-@app.route("/api/auth/google", methods=["POST"])
-def google_auth():
-    """
-    Verify a Google Identity Services (GSI) JWT credential token.
-    The frontend POSTs { credential: <id_token> } after the user
-    picks their Google account.  We verify it server-side and
-    return the user's basic profile.
-    """
-    if not GOOGLE_CLIENT_ID:
-        return jsonify({
-            "success": False,
-            "error": "Google Sign-In is not configured on this server."
-        }), 500
-
-    data = request.get_json(silent=True) or {}
-    credential = data.get("credential", "").strip()
-
-    if not credential:
-        return jsonify({
-            "success": False,
-            "error": "No credential token provided."
-        }), 400
-
-    # Verify the token with Google's tokeninfo endpoint
-    try:
-        resp = requests.get(
-            "https://oauth2.googleapis.com/tokeninfo",
-            params={"id_token": credential},
-            timeout=8
-        )
-        if resp.status_code != 200:
-            return jsonify({
-                "success": False,
-                "error": "Google credential verification failed. Please try again."
-            }), 401
-
-        info = resp.json()
-
-        # Validate audience matches our client ID
-        aud = info.get("aud") or info.get("azp") or ""
-        if aud != GOOGLE_CLIENT_ID:
-            return jsonify({
-                "success": False,
-                "error": "Token audience mismatch. Sign-in rejected."
-            }), 401
-
-        # Check token has not expired
-        exp = int(info.get("exp", 0))
-        if exp and exp < int(time.time()):
-            return jsonify({
-                "success": False,
-                "error": "Google token has expired. Please sign in again."
-            }), 401
-
-        user_name  = info.get("name") or info.get("given_name") or ""
-        user_email = info.get("email") or ""
-        user_pic   = info.get("picture") or ""
-
-        return jsonify({
-            "success": True,
-            "message": f"Welcome, {user_name or user_email}!",
-            "name":    user_name,
-            "email":   user_email,
-            "picture": user_pic
-        })
-
-    except Exception as exc:
-        print("GOOGLE AUTH ERROR:", exc)
-        return jsonify({
-            "success": False,
-            "error": "Could not verify Google credentials. Please try again."
-        }), 500
 
 
 # =========================================================
@@ -282,7 +198,7 @@ def geocode_location(location):
                 "limit": 1
             },
             headers={
-                "User-Agent": "UMapAI/1.0"
+                "User-Agent": "NaviSphereAI/1.0"
             },
             timeout=8
         )
@@ -402,7 +318,7 @@ def get_driving_route(start, end):
                 "steps": "false",
                 "overview": "false"
             },
-            headers={"User-Agent": "UMapAI/1.0"},
+            headers={"User-Agent": "NaviSphereAI/1.0"},
             timeout=12
         )
         if response.status_code != 200:
@@ -436,7 +352,7 @@ def get_walking_route(start, end):
                 "steps": "false",
                 "overview": "false"
             },
-            headers={"User-Agent": "UMapAI/1.0"},
+            headers={"User-Agent": "NaviSphereAI/1.0"},
             timeout=12
         )
         if response.status_code != 200:
@@ -462,7 +378,7 @@ def search_nearby_poi(query, limit=1):
                 "format": "json",
                 "limit": limit
             },
-            headers={"User-Agent": "UMapAI/1.0"},
+            headers={"User-Agent": "NaviSphereAI/1.0"},
             timeout=6
         )
         if response.status_code == 200:
@@ -611,449 +527,606 @@ def calculate_transport(
 
 
 # =========================================================
-# SMART JOURNEY PLANNER (/api/smart-journey & /api/journey-plan)
-# Real multimodal routing via Google Maps Directions (SerpApi)
+# SMART JOURNEY PLANNER (/api/smart-journey) — frontend endpoint
 # =========================================================
 
-def execute_smart_journey_search(from_location, to_location, journey_date=None):
-    if not SERPAPI_KEY:
-        return {
-            "success": False,
-            "error": "Google Maps Directions service is currently unavailable (SERPAPI_KEY is not configured)."
-        }, 500
-
-    if not from_location or not to_location:
-        return {
-            "success": False,
-            "error": "Please enter both starting point and destination."
-        }, 400
-
-    # Parse journey date for SerpApi depart_at parameter if valid future date
-    time_param = None
-    if journey_date:
-        try:
-            dt = datetime.datetime.strptime(journey_date, "%Y-%m-%d")
-            dt = dt.replace(hour=9, minute=0, second=0)
-            ts = int(dt.timestamp())
-            if ts > int(time.time()):
-                time_param = f"depart_at:{ts}"
-        except Exception:
-            pass
-
-    modes = ["0", "3", "2", "9", "1", "4"]
-    raw_dirs = {}
-    places_info = []
-
-    def fetch_serp_mode(m):
-        params = {
-            "engine": "google_maps_directions",
-            "start_addr": from_location,
-            "end_addr": to_location,
-            "travel_mode": m,
-            "api_key": SERPAPI_KEY
-        }
-        if time_param and m in ["0", "3"]:
-            params["time"] = time_param
-        try:
-            resp = requests.get("https://serpapi.com/search.json", params=params, timeout=14)
-            d = resp.json()
-            return m, d.get("directions", []), d.get("places_info", [])
-        except Exception as e:
-            print(f"SERPAPI DIRECTIONS ERROR for mode {m}:", e)
-            return m, [], []
-
-    with ThreadPoolExecutor(max_workers=6) as executor:
-        for m, dirs, p in executor.map(fetch_serp_mode, modes):
-            raw_dirs[m] = dirs
-            if p and not places_info:
-                places_info = p
-
-    # Resolve addresses and coordinates
-    start_coords = None
-    end_coords = None
-    resolved_from = from_location
-    resolved_to = to_location
-
-    if places_info and len(places_info) >= 2:
-        resolved_from = places_info[0].get("address") or from_location
-        resolved_to = places_info[1].get("address") or to_location
-        start_coords = places_info[0].get("gps_coordinates")
-        end_coords = places_info[1].get("gps_coordinates")
-
-    options = []
-
-    # 1. Driving -> Car & Taxi
-    driving_dirs = raw_dirs.get("0", [])
-    if driving_dirs:
-        best_drive = driving_dirs[0]
-        dist_str = best_drive.get("formatted_distance") or (
-            f"{round(best_drive.get('distance', 0)/1000, 1)} km" if best_drive.get("distance") else "Distance unavailable"
-        )
-        dur_str = best_drive.get("formatted_duration") or "Duration unavailable"
-        via = best_drive.get("via") or ""
-
-        car_waypoints = []
-        for step in best_drive.get("details", [])[:6]:
-            gps = step.get("gps_coordinates")
-            if gps:
-                car_waypoints.append({
-                    "name": step.get("title", ""),
-                    "latitude": gps.get("latitude"),
-                    "longitude": gps.get("longitude")
-                })
-
-        # Car option
-        options.append({
-            "id": "car",
-            "mode": "car",
-            "mode_label": "Car",
-            "icon": "🚗",
-            "distance": dist_str,
-            "duration": dur_str,
-            "distance_meters": best_drive.get("distance", 0),
-            "duration_seconds": best_drive.get("duration", 0),
-            "transfers": 0,
-            "transfers_label": "Direct (0 transfers)",
-            "route": f"via {via}" if via else "Primary road / highway network",
-            "path_display": f"Origin → {via or 'Direct Highway Route'} → Destination",
-            "stops": [],
-            "stops_count": 0,
-            "waypoints": car_waypoints
-        })
-
-        # Taxi option
-        options.append({
-            "id": "taxi",
-            "mode": "taxi",
-            "mode_label": "Taxi",
-            "icon": "🚕",
-            "distance": dist_str,
-            "duration": dur_str,
-            "distance_meters": best_drive.get("distance", 0),
-            "duration_seconds": best_drive.get("duration", 0),
-            "transfers": 0,
-            "transfers_label": "Direct (0 transfers)",
-            "route": f"Door-to-door cab via {via}" if via else "Door-to-door cab route",
-            "path_display": f"Origin → Direct Cab ({via or 'Fastest Road Route'}) → Destination",
-            "stops": [],
-            "stops_count": 0,
-            "waypoints": car_waypoints
-        })
-
-    # 2. Transit -> Train/Metro & Bus
-    transit_dirs = raw_dirs.get("3", [])
-    best_train = None
-    best_bus = None
-
-    for d in transit_dirs:
-        trips = d.get("trips", [])
-        is_train = False
-        is_bus = False
-        for t in trips:
-            icon = t.get("icon", "").lower()
-            title = t.get("title", "").lower()
-            if any(k in icon for k in ["rail", "train", "subway", "metro", "tram"]) or any(k in title for k in ["express", "emu", "memu", "metro", "train", "rail", "line"]):
-                is_train = True
-            elif "bus" in icon or "bus" in title or re.search(r"^\d+[a-z]?", title):
-                is_bus = True
-
-        if is_train and not best_train:
-            best_train = d
-        elif is_bus and not best_bus:
-            best_bus = d
-
-    if best_train:
-        trips = best_train.get("trips", [])
-        transit_legs = [t for t in trips if t.get("travel_mode") == "Transit"]
-        train_transfers = max(0, len(transit_legs) - 1)
-        all_stops = []
-        train_waypoints = []
-        for t in trips:
-            for s in t.get("stops", []):
-                sname = s.get("name")
-                if sname and sname not in all_stops:
-                    all_stops.append(sname)
-                gps = s.get("gps_coordinates")
-                if gps:
-                    train_waypoints.append({
-                        "name": sname,
-                        "latitude": gps.get("latitude"),
-                        "longitude": gps.get("longitude")
-                    })
-
-        steps = ["Origin"]
-        for t in trips:
-            if t.get("start_stop", {}).get("name"):
-                steps.append(t["start_stop"]["name"].split(",")[0].strip())
-            if t.get("title"):
-                clean_title = re.sub(r"^\d+\s*-\s*", "", t["title"]).split(" Junction")[0].split(" EMU")[0].strip()
-                steps.append(clean_title)
-            if t.get("end_stop", {}).get("name"):
-                steps.append(t["end_stop"]["name"].split(",")[0].strip())
-        steps.append("Destination")
-        clean_steps = [steps[0]]
-        for s in steps[1:]:
-            if s != clean_steps[-1]:
-                clean_steps.append(s)
-
-        options.append({
-            "id": "train",
-            "mode": "train",
-            "mode_label": "Train / Metro",
-            "icon": "🚆",
-            "distance": best_train.get("formatted_distance") or "Distance unavailable",
-            "duration": best_train.get("formatted_duration") or "Duration unavailable",
-            "distance_meters": best_train.get("distance", 0),
-            "duration_seconds": best_train.get("duration", 0),
-            "transfers": train_transfers,
-            "transfers_label": "Direct (0 transfers)" if train_transfers == 0 else f"{train_transfers} Transfer{'s' if train_transfers > 1 else ''}",
-            "route": " / ".join([t.get("title", "Train") for t in transit_legs]) or "Suburban Railway Network",
-            "path_display": " → ".join(clean_steps[:6]),
-            "stops": all_stops,
-            "stops_count": len(all_stops),
-            "waypoints": train_waypoints
-        })
-
-    if best_bus:
-        trips = best_bus.get("trips", [])
-        transit_legs = [t for t in trips if t.get("travel_mode") == "Transit"]
-        bus_transfers = max(0, len(transit_legs) - 1)
-        all_stops = []
-        bus_waypoints = []
-        for t in trips:
-            for s in t.get("stops", []):
-                sname = s.get("name")
-                if sname and sname not in all_stops:
-                    all_stops.append(sname)
-                gps = s.get("gps_coordinates")
-                if gps:
-                    bus_waypoints.append({
-                        "name": sname,
-                        "latitude": gps.get("latitude"),
-                        "longitude": gps.get("longitude")
-                    })
-
-        steps = ["Origin"]
-        for t in trips:
-            if t.get("start_stop", {}).get("name"):
-                steps.append(t["start_stop"]["name"].split(",")[0].strip())
-            if t.get("title"):
-                steps.append(t["title"].strip())
-            if t.get("end_stop", {}).get("name"):
-                steps.append(t["end_stop"]["name"].split(",")[0].strip())
-        steps.append("Destination")
-        clean_steps = [steps[0]]
-        for s in steps[1:]:
-            if s != clean_steps[-1]:
-                clean_steps.append(s)
-
-        options.append({
-            "id": "bus",
-            "mode": "bus",
-            "mode_label": "Bus / Transit",
-            "icon": "🚌",
-            "distance": best_bus.get("formatted_distance") or "Distance unavailable",
-            "duration": best_bus.get("formatted_duration") or "Duration unavailable",
-            "distance_meters": best_bus.get("distance", 0),
-            "duration_seconds": best_bus.get("duration", 0),
-            "transfers": bus_transfers,
-            "transfers_label": "Direct (0 transfers)" if bus_transfers == 0 else f"{bus_transfers} Transfer{'s' if bus_transfers > 1 else ''}",
-            "route": " / ".join([t.get("title", "Bus") for t in transit_legs]) or "Public Transit Bus Line",
-            "path_display": " → ".join(clean_steps[:6]),
-            "stops": all_stops,
-            "stops_count": len(all_stops),
-            "waypoints": bus_waypoints
-        })
-
-    # 3. Two-wheeler
-    tw_dirs = raw_dirs.get("9", [])
-    if tw_dirs:
-        best_tw = tw_dirs[0]
-        options.append({
-            "id": "two_wheeler",
-            "mode": "two_wheeler",
-            "mode_label": "Two-wheeler",
-            "icon": "🛵",
-            "distance": best_tw.get("formatted_distance") or "Distance unavailable",
-            "duration": best_tw.get("formatted_duration") or "Duration unavailable",
-            "distance_meters": best_tw.get("distance", 0),
-            "duration_seconds": best_tw.get("duration", 0),
-            "transfers": 0,
-            "transfers_label": "Direct (0 transfers)",
-            "route": f"via {best_tw.get('via')}" if best_tw.get("via") else "Arterial road network",
-            "path_display": f"Origin → via {best_tw.get('via', 'Arterial Road')} → Destination",
-            "stops": [],
-            "stops_count": 0,
-            "waypoints": []
-        })
-
-    # 4. Bicycle
-    bike_dirs = raw_dirs.get("1", [])
-    if bike_dirs:
-        best_bike = bike_dirs[0]
-        options.append({
-            "id": "bicycle",
-            "mode": "bicycle",
-            "mode_label": "Bicycle",
-            "icon": "🚲",
-            "distance": best_bike.get("formatted_distance") or "Distance unavailable",
-            "duration": best_bike.get("formatted_duration") or "Duration unavailable",
-            "distance_meters": best_bike.get("distance", 0),
-            "duration_seconds": best_bike.get("duration", 0),
-            "transfers": 0,
-            "transfers_label": "Direct (0 transfers)",
-            "route": f"via {best_bike.get('via')}" if best_bike.get("via") else "Cycling path / lane",
-            "path_display": f"Origin → via {best_bike.get('via', 'Cycling Route')} → Destination",
-            "stops": [],
-            "stops_count": 0,
-            "waypoints": []
-        })
-
-    # 5. Walking
-    walk_dirs = raw_dirs.get("2", [])
-    if walk_dirs:
-        best_walk = walk_dirs[0]
-        options.append({
-            "id": "walking",
-            "mode": "walking",
-            "mode_label": "Walking",
-            "icon": "🚶",
-            "distance": best_walk.get("formatted_distance") or "Distance unavailable",
-            "duration": best_walk.get("formatted_duration") or "Duration unavailable",
-            "distance_meters": best_walk.get("distance", 0),
-            "duration_seconds": best_walk.get("duration", 0),
-            "transfers": 0,
-            "transfers_label": "Direct (0 transfers)",
-            "route": f"via {best_walk.get('via')}" if best_walk.get("via") else "Pedestrian walkway",
-            "path_display": f"Origin → via {best_walk.get('via', 'Pedestrian Walkway')} → Destination",
-            "stops": [],
-            "stops_count": 0,
-            "waypoints": []
-        })
-
-    # 6. Flight
-    flight_dirs = raw_dirs.get("4", [])
-    if flight_dirs and flight_dirs[0].get("flight"):
-        fl = flight_dirs[0]["flight"]
-        airlines = ", ".join(fl.get("airlines", [])) or "Commercial Flights"
-        fl_dur = fl.get("formatted_nonstop_duration") or fl.get("formatted_connecting_duration") or "Flight schedule available"
-        fl_transfers = 0 if fl.get("nonstop_duration") else 1
-        options.append({
-            "id": "flight",
-            "mode": "flight",
-            "mode_label": "Flight",
-            "icon": "✈️",
-            "distance": f"{fl.get('departure', from_location)} → {fl.get('arrival', to_location)}",
-            "duration": fl_dur,
-            "distance_meters": 0,
-            "duration_seconds": fl.get("nonstop_duration") or fl.get("connecting_duration") or 7200,
-            "transfers": fl_transfers,
-            "transfers_label": "Non-stop flight" if fl_transfers == 0 else "1 Connection",
-            "route": f"{airlines} air corridor",
-            "path_display": f"Origin ({fl.get('departure', 'Airport')}) → {airlines} → Destination ({fl.get('arrival', 'Airport')})",
-            "stops": fl.get("airlines", []),
-            "stops_count": len(fl.get("airlines", [])),
-            "waypoints": []
-        })
-
-    if not options:
-        return {
-            "success": False,
-            "error": "No verified routes found for these locations. Please check the spelling or enter city/region names."
-        }, 404
-
-    # Determine best route
-    ranked_candidates = [
-        o for o in options 
-        if o["duration_seconds"] > 0 and (o["mode"] != "walking" or o["distance_meters"] <= 1500 or len(options) == 1)
-    ] or options
-
-    min_dur_opt = min(ranked_candidates, key=lambda x: x["duration_seconds"])
-    opts_with_dist = [o for o in options if o["distance_meters"] > 0]
-    min_dist_opt = min(opts_with_dist, key=lambda x: x["distance_meters"]) if opts_with_dist else min_dur_opt
-    min_trans_opt = min(ranked_candidates, key=lambda x: x["transfers"])
-
-    smart_choice = min_dur_opt
-
-    is_fastest = (smart_choice["id"] == min_dur_opt["id"])
-    is_shortest = (smart_choice["id"] == min_dist_opt["id"])
-    is_fewest_transfers = (smart_choice["transfers"] <= min_trans_opt["transfers"])
-
-    badges = []
-    if is_fastest:
-        badges.append("⚡ Fastest Route")
-    if is_shortest and not is_fastest:
-        badges.append("📍 Shortest Distance")
-    if is_fewest_transfers and smart_choice["transfers"] == 0:
-        badges.append("🔄 Direct / 0 Transfers")
-
-    badge_text = " • ".join(badges) if badges else "⚡ Recommended Route"
-
-    explanation_parts = []
-    if is_fastest:
-        explanation_parts.append(f"Fastest travel time ({smart_choice['duration']})")
-    if smart_choice["transfers"] == 0:
-        explanation_parts.append("seamless direct connection with zero transfers")
-    elif smart_choice["transfers"] == 1:
-        explanation_parts.append("only 1 simple transfer")
-    if is_shortest:
-        explanation_parts.append(f"shortest journey distance ({smart_choice['distance']})")
-
-    if not explanation_parts:
-        explanation_parts.append("optimal balance of speed and convenience")
-
-    smart_route = dict(smart_choice)
-    smart_route["badge"] = badge_text
-    smart_route["reason"] = f"Selected because it provides the {', '.join(explanation_parts)}."
-    smart_route["is_fastest"] = is_fastest
-    smart_route["is_shortest"] = is_shortest
-    smart_route["is_fewest_transfers"] = is_fewest_transfers
-
-    for opt in options:
-        opt["is_fastest"] = (opt["id"] == min_dur_opt["id"])
-        opt["is_shortest"] = (opt["id"] == min_dist_opt["id"])
-        opt["is_fewest_transfers"] = (opt["transfers"] == min_trans_opt["transfers"])
-
-    return {
-        "success": True,
-        "from": resolved_from,
-        "to": resolved_to,
-        "query_from": from_location,
-        "query_to": to_location,
-        "journey_date": journey_date,
-        "start_coordinates": start_coords,
-        "end_coordinates": end_coords,
-        "smart_route": smart_route,
-        "options": options
-    }, 200
-
-
-@app.route("/api/smart-journey", methods=["GET", "POST"])
-@app.route("/api/journey-plan", methods=["GET", "POST"])
+@app.route("/api/smart-journey", methods=["POST"])
 def smart_journey():
     try:
-        if request.method == "POST":
-            data = request.get_json(silent=True) or {}
-        else:
-            data = request.args
+        data = request.get_json(silent=True) or {}
 
-        from_loc = str(data.get("from", "")).strip()
-        to_loc = str(data.get("to", "")).strip()
-        from_date_val = str(data.get("from_date", data.get("date", data.get("journey_date", "")))).strip()
-        to_date_val = str(data.get("to_date", "")).strip()
-        # Use from_date as the departure date for routing; to_date stored for future use
-        date_val = from_date_val
+        from_location = str(data.get("from", "")).strip()
+        to_location   = str(data.get("to",   "")).strip()
 
-        payload, status_code = execute_smart_journey_search(from_loc, to_loc, date_val)
-        return jsonify(payload), status_code
+        if not from_location:
+            return jsonify({"success": False, "error": "Please enter a starting location."}), 400
+        if not to_location:
+            return jsonify({"success": False, "error": "Please enter a destination."}), 400
 
-    except Exception as error:
-        print("SMART JOURNEY API ERROR:", error)
+        # --- Geocode ---
+        start = geocode_location(from_location)
+        if not start:
+            return jsonify({"success": False,
+                            "error": f"Could not find '{from_location}'. Please check the location name."}), 400
+
+        end = geocode_location(to_location)
+        if not end:
+            return jsonify({"success": False,
+                            "error": f"Could not find '{to_location}'. Please check the location name."}), 400
+
+        if (abs(start["lat"] - end["lat"]) < 0.0001
+                and abs(start["lng"] - end["lng"]) < 0.0001):
+            return jsonify({"success": False,
+                            "error": "Start and destination are the same. Please choose two different locations."}), 400
+
+        # --- Distances ---
+        straight_km = round(haversine_distance(
+            start["lat"], start["lng"], end["lat"], end["lng"]), 2)
+
+        road_routes = get_driving_route(start, end)
+        road_km     = round(road_routes[0]["distance"] / 1000, 1) if road_routes else round(straight_km * 1.25, 1)
+        road_mins   = round(road_routes[0]["duration"] / 60)      if road_routes else round((road_km / 50) * 60)
+
+        walk_km   = None
+        walk_mins = None
+        if straight_km <= 60:
+            foot = get_walking_route(start, end)
+            if foot:
+                walk_km   = round(foot[0]["distance"] / 1000, 1)
+                walk_mins = max(1, round(foot[0]["duration"] / 60))
+            elif road_km <= 15:
+                walk_km   = road_km
+                walk_mins = max(1, round((road_km / 4.8) * 60))
+
+        flight_mins = max(45, round((straight_km / 750.0) * 60 + 30))
+
+        path_road  = f"{start['display_name'].split(',')[0]} → {end['display_name'].split(',')[0]}"
+        path_walk  = path_road
+        path_bus   = f"{start['display_name'].split(',')[0]} → (Bus) → {end['display_name'].split(',')[0]}"
+        path_train = f"{start['display_name'].split(',')[0]} → (Train) → {end['display_name'].split(',')[0]}"
+        path_fly   = f"{start['display_name'].split(',')[0]} ✈ {end['display_name'].split(',')[0]}"
+
+        def _opt(opt_id, mode_key, mode_label, icon, dist_km, dur_mins,
+                 path, cost_disp, transfers=0, is_fastest=False, is_shortest=False,
+                 reason="", badge="", stops=None, waypoints=None):
+            transfers_label = ("Direct" if transfers == 0
+                               else f"{transfers} transfer{'s' if transfers > 1 else ''}")
+            return {
+                "id":             opt_id,
+                "mode":           mode_key,
+                "mode_label":     mode_label,
+                "icon":           icon,
+                "route":          path,
+                "path_display":   path,
+                "distance":       f"{dist_km:.1f} km" if dist_km is not None else "—",
+                "distance_km":    dist_km,
+                "duration":       format_minutes(dur_mins),
+                "duration_minutes": dur_mins,
+                "cost_display":   cost_disp,
+                "transfers":      transfers,
+                "transfers_label": transfers_label,
+                "reason":         reason,
+                "badge":          badge,
+                "is_fastest":     is_fastest,
+                "is_shortest":    is_shortest,
+                "stops":          stops or [],
+                "waypoints":      waypoints or []
+            }
+
+        options = []
+
+        # Taxi (road)
+        options.append(_opt(
+            "taxi", "taxi", "Taxi / Cab", "🚕",
+            road_km, road_mins, path_road,
+            "Taxi fare unavailable from configured API",
+            transfers=0, is_fastest=True,
+            reason=f"Fastest direct road connection — {format_minutes(road_mins)} via real road network."
+        ))
+
+        # Walking (only if feasible)
+        if walk_km is not None:
+            options.append(_opt(
+                "walking", "walking", "Walking", "🚶",
+                walk_km, walk_mins, path_walk,
+                "₹0 (Free)",
+                transfers=0, is_shortest=(walk_km <= road_km),
+                reason="Free pedestrian route along real footpaths."
+            ))
+
+        # Bus (road, ~35% slower)
+        bus_mins = round(road_mins * 1.35)
+        options.append(_opt(
+            "bus", "bus", "Bus", "🚌",
+            road_km, bus_mins, path_bus,
+            "Live bus fares unavailable from configured API",
+            transfers=1,
+            reason="Economical road-based transit along the road corridor."
+        ))
+
+        # Train
+        options.append(_opt(
+            "train", "train", "Train / Railway", "🚆",
+            straight_km, None, path_train,
+            "Live train fares unavailable from configured API",
+            transfers=1,
+            reason="Rail option (live schedules not available from configured API)."
+        ))
+
+        # Flight (long-distance only)
+        if straight_km > 200:
+            options.append(_opt(
+                "flight", "flight", "Flight", "✈️",
+                straight_km, flight_mins, path_fly,
+                "Live airfare unavailable (SerpAPI key not configured)",
+                transfers=0, is_fastest=(straight_km > 500),
+                reason=f"Aerial route — quickest for long distances: {format_minutes(flight_mins)} flight time."
+            ))
+
+        # --- Pick smart route: fastest option with known duration ---
+        smart_candidates = [o for o in options if o["duration_minutes"] is not None]
+        smart = min(smart_candidates, key=lambda o: o["duration_minutes"]) if smart_candidates else options[0]
+        smart = dict(smart)  # copy
+        smart["badge"] = "⚡ Smart Route"
+        if not smart.get("reason"):
+            smart["reason"] = "Best overall route based on real road distance and travel time."
+
+        return jsonify({
+            "success": True,
+            "from": start["display_name"],
+            "to":   end["display_name"],
+            "start_coordinates": {"latitude": start["lat"], "longitude": start["lng"]},
+            "end_coordinates":   {"latitude": end["lat"],   "longitude": end["lng"]},
+            "straight_km": straight_km,
+            "smart_route": smart,
+            "options": options,
+            "note": "Distances and durations use real geocoding and OSRM road routing. Fares shown only when available from configured APIs."
+        })
+
+    except Exception as err:
+        print("SMART JOURNEY ERROR:", err)
         return jsonify({
             "success": False,
-            "error": "Unable to calculate smart journey at this time. Please check locations and try again."
+            "error": "An error occurred while planning this journey. Please verify your locations and try again."
         }), 500
 
+
+# =========================================================
+# SMART JOURNEY PLANNER (/api/journey-plan)
+# =========================================================
+
+@app.route(
+    "/api/journey-plan",
+    methods=["POST"]
+)
+def journey_plan():
+    try:
+        data = request.get_json(silent=True) or {}
+
+        from_location = str(data.get("from", "")).strip()
+        to_location = str(data.get("to", "")).strip()
+        raw_mode = str(data.get("mode", "walking")).strip().lower()
+        reach_by = data.get("reach_by")
+
+        try:
+            budget = float(data.get("budget", 0))
+        except (TypeError, ValueError):
+            return jsonify({
+                "success": False,
+                "error": "Please enter a valid budget."
+            }), 400
+
+        # Validation
+        if not from_location:
+            return jsonify({
+                "success": False,
+                "error": "Please enter your starting location."
+            }), 400
+
+        if not to_location:
+            return jsonify({
+                "success": False,
+                "error": "Please enter your destination."
+            }), 400
+
+        if not math.isfinite(budget) or budget < 0:
+            return jsonify({
+                "success": False,
+                "error": "Please enter a valid budget."
+            }), 400
+
+        # Normalize mode
+        mode_map = {
+            "walking": "walking",
+            "walk": "walking",
+            "van": "van",
+            "taxi": "taxi",
+            "cab": "taxi",
+            "taxi / cab": "taxi",
+            "bus": "bus",
+            "train": "train",
+            "railway": "train",
+            "train / railway": "train",
+            "metro": "train",
+            "flight": "flight",
+            "aeroplane": "flight",
+            "flight / aeroplane": "flight"
+        }
+        mode = mode_map.get(raw_mode, "taxi")
+
+        # Geocode start
+        start = geocode_location(from_location)
+        if not start:
+            return jsonify({
+                "success": False,
+                "error": "Location could not be found. Please check the location name."
+            }), 400
+
+        # Geocode destination
+        destination = geocode_location(to_location)
+        if not destination:
+            return jsonify({
+                "success": False,
+                "error": "Location could not be found. Please check the location name."
+            }), 400
+
+        # Check if same
+        if (
+            abs(start["lat"] - destination["lat"]) < 0.0001
+            and abs(start["lng"] - destination["lng"]) < 0.0001
+        ):
+            return jsonify({
+                "success": False,
+                "error": "Starting point and destination cannot be the same. Please choose two different locations."
+            }), 400
+
+        # Base calculations
+        straight_km = round(
+            haversine_distance(
+                start["lat"],
+                start["lng"],
+                destination["lat"],
+                destination["lng"]
+            ),
+            2
+        )
+
+        # Road route from OSRM
+        road_routes = get_driving_route(start, destination)
+        road_distance_km = None
+        road_duration_minutes = None
+
+        if road_routes:
+            road_distance_km = round(road_routes[0]["distance"] / 1000, 2)
+            road_duration_minutes = round(road_routes[0]["duration"] / 60)
+        else:
+            road_distance_km = round(straight_km * 1.25, 2)
+            road_duration_minutes = None
+
+        # Walking route from OSRM foot routing
+        walk_distance_km = None
+        walk_duration_minutes = None
+        walk_route_notes = ""
+        if straight_km <= 120:
+            foot_routes = get_walking_route(start, destination)
+            if foot_routes:
+                walk_distance_km = round(foot_routes[0]["distance"] / 1000, 1)
+                walk_duration_minutes = max(1, round(foot_routes[0]["duration"] / 60))
+                walk_route_notes = "Pedestrian route calculated via OpenStreetMap foot network."
+            elif road_distance_km and road_distance_km <= 50:
+                walk_distance_km = road_distance_km
+                walk_duration_minutes = max(1, round((walk_distance_km / 4.8) * 60))
+                walk_route_notes = "Walking route estimated along road corridor."
+            else:
+                walk_route_notes = "Pedestrian route unavailable for this distance or terrain from the configured routing service."
+        else:
+            walk_route_notes = "Pedestrian route not feasible for this distance from the configured routing service."
+
+        # Selected mode details
+        selected_cost = None
+        cost_display = ""
+        cost_type = "unavailable"
+        price_status = "Price unavailable"
+        selected_distance = road_distance_km
+        selected_duration = road_duration_minutes
+        route_notes = ""
+        nearby_info = None
+
+        if mode == "walking":
+            selected_distance = walk_distance_km
+            selected_duration = walk_duration_minutes
+            if walk_distance_km is not None:
+                selected_cost = 0
+                cost_display = "₹0 (Free)"
+                cost_type = "exact"
+                price_status = "Exact price"
+                route_notes = walk_route_notes
+            else:
+                selected_cost = None
+                cost_display = "Data unavailable"
+                cost_type = "unavailable"
+                price_status = "Price unavailable"
+                route_notes = walk_route_notes
+
+        elif mode == "taxi":
+            selected_distance = road_distance_km
+            selected_duration = road_duration_minutes
+            selected_cost = None
+            cost_display = "Taxi fare unavailable from the configured API"
+            cost_type = "unavailable"
+            price_status = "Price unavailable"
+            route_notes = "Distance and driving duration calculated from the OpenStreetMap road network."
+            # Search nearby taxi stand
+            t_stand = search_nearby_poi(f"taxi stand near {from_location}", limit=1)
+            if t_stand:
+                nearby_info = f"Nearby taxi service: {t_stand[0].get('display_name', '').split(',')[0]}"
+
+        elif mode == "van":
+            selected_distance = road_distance_km
+            selected_duration = road_duration_minutes
+            selected_cost = None
+            cost_display = "Van fare unavailable from the configured API"
+            cost_type = "unavailable"
+            price_status = "Price unavailable"
+            route_notes = "Van road route calculated from OpenStreetMap road network."
+
+        elif mode == "bus":
+            selected_distance = road_distance_km
+            selected_duration = (
+                round(road_duration_minutes * 1.35)
+                if road_duration_minutes
+                else round((road_distance_km / 30.0) * 60)
+            )
+            selected_cost = None
+            cost_display = "Live bus information is not available from the configured API"
+            cost_type = "unavailable"
+            price_status = "Price unavailable"
+            route_notes = "Road distance via OSRM. Live bus schedules, routes, and fares are not available from the configured API."
+            # Search nearby bus terminal
+            b_stop = search_nearby_poi(f"bus station near {from_location}", limit=1)
+            if b_stop:
+                nearby_info = f"Nearby bus station: {b_stop[0].get('display_name', '').split(',')[0]}"
+
+        elif mode == "train":
+            selected_distance = straight_km
+            selected_duration = None
+            selected_cost = None
+            cost_display = "Live train information is not available from the configured API."
+            cost_type = "unavailable"
+            price_status = "Price unavailable"
+            route_notes = "Live train information is not available from the configured API. No fabricated train data is displayed."
+            # Search nearby railway station
+            r_station = search_nearby_poi(f"railway station near {from_location}", limit=1)
+            if r_station:
+                nearby_info = f"Departure station identified: {r_station[0].get('display_name', '').split(',')[0]}"
+
+        elif mode == "flight":
+            selected_distance = straight_km
+            selected_duration = max(45, round((straight_km / 750.0) * 60 + 30))
+            if not SERPAPI_KEY:
+                selected_cost = None
+                cost_display = "Flight search configuration missing (SERPAPI_KEY is not configured)"
+                cost_type = "unavailable"
+                price_status = "Price unavailable"
+                route_notes = "Flight search requires SERPAPI_KEY in server environment. Fake flight prices are never displayed."
+            else:
+                # Query Google Flights
+                try:
+                    dep_code = get_flight_location_id(from_location)
+                    arr_code = get_flight_location_id(to_location)
+                    if dep_code and arr_code and str(dep_code).upper() != str(arr_code).upper():
+                        tomorrow = (
+                            datetime.date.today() + datetime.timedelta(days=7)
+                        ).strftime("%Y-%m-%d")
+                        f_resp = requests.get(
+                            "https://serpapi.com/search.json",
+                            params={
+                                "engine": "google_flights",
+                                "departure_id": dep_code,
+                                "arrival_id": arr_code,
+                                "outbound_date": tomorrow,
+                                "type": "2",
+                                "currency": "INR",
+                                "hl": "en",
+                                "gl": "in",
+                                "api_key": SERPAPI_KEY
+                            },
+                            timeout=15
+                        )
+                        if f_resp.status_code == 200:
+                            f_data = f_resp.json()
+                            raw_f = (
+                                f_data.get("best_flights", [])
+                                + f_data.get("other_flights", [])
+                            )
+                            prices = [
+                                opt["price"]
+                                for opt in raw_f
+                                if isinstance(opt, dict) and opt.get("price") is not None
+                            ]
+                            if prices:
+                                min_price = min(prices)
+                                selected_cost = min_price
+                                cost_display = f"₹{min_price:,}"
+                                cost_type = "exact"
+                                price_status = "Exact price"
+                                route_notes = f"Real flight fare retrieved from Google Flights (lowest fare: ₹{min_price:,})."
+                            else:
+                                cost_display = "No live flight fares found from the configured API"
+                                cost_type = "unavailable"
+                                price_status = "Price unavailable"
+                                route_notes = "Air route identified; live flight fares unavailable for selected dates."
+                        else:
+                            cost_display = "Flight fare unavailable from configured API"
+                            cost_type = "unavailable"
+                            price_status = "Price unavailable"
+                            route_notes = "Flight service returned a non-200 response."
+                    else:
+                        cost_display = "Airport code could not be resolved from configured API"
+                        cost_type = "unavailable"
+                        price_status = "Price unavailable"
+                        route_notes = "Could not resolve airport code for flight search."
+                except Exception as ex:
+                    cost_display = "Flight search service unavailable"
+                    cost_type = "unavailable"
+                    price_status = "Price unavailable"
+                    route_notes = f"Flight search could not be completed: {str(ex)}"
+
+        # Budget calculation
+        remaining = None
+        within_budget = None
+        budget_message = ""
+
+        if selected_cost is not None and cost_type == "exact":
+            remaining = round(budget - selected_cost)
+            within_budget = (remaining >= 0)
+            if within_budget:
+                budget_message = (
+                    f"This journey fits within your budget of ₹{budget:,.0f}. "
+                    f"You have ₹{remaining:,.0f} remaining."
+                )
+            else:
+                budget_message = (
+                    f"This journey is ₹{abs(remaining):,.0f} above your selected budget of ₹{budget:,.0f}."
+                )
+        else:
+            budget_message = (
+                f"{cost_display}. Distance and duration are based on real route data."
+            )
+
+        # Build full multi-mode comparison list
+        modes_to_compare = [
+            ("walking", "Walking", "🚶", walk_distance_km, walk_duration_minutes),
+            ("van", "Van", "🚐", road_distance_km, road_duration_minutes),
+            ("taxi", "Taxi / Cab", "🚕", road_distance_km, road_duration_minutes),
+            ("bus", "Bus", "🚌", road_distance_km, round(road_duration_minutes * 1.35) if road_duration_minutes else None),
+            ("train", "Train / Railway", "🚆", straight_km, None),
+            ("flight", "Flight / Aeroplane", "✈️", straight_km, max(45, round((straight_km / 750.0) * 60 + 30)))
+        ]
+
+        comparison = []
+        for m_key, m_label, m_icon, m_dist, m_dur in modes_to_compare:
+            if m_key == "walking":
+                if walk_distance_km is not None:
+                    m_cost = 0
+                    m_cost_disp = "₹0 (Free)"
+                    m_cost_type = "exact"
+                    m_within = True
+                    m_note = "Pedestrian route"
+                    m_stops = "None"
+                else:
+                    m_cost = None
+                    m_cost_disp = "Data unavailable"
+                    m_cost_type = "unavailable"
+                    m_within = None
+                    m_note = "Pedestrian route unavailable for this distance/terrain"
+                    m_stops = "Data unavailable"
+            elif m_key == "taxi":
+                m_cost = None
+                m_cost_disp = "Taxi fare unavailable from the configured API"
+                m_cost_type = "unavailable"
+                m_within = None
+                m_note = "Real road route"
+                m_stops = "Direct"
+            elif m_key == "van":
+                m_cost = None
+                m_cost_disp = "Van fare unavailable from the configured API"
+                m_cost_type = "unavailable"
+                m_within = None
+                m_note = "Van road route"
+                m_stops = "Direct"
+            elif m_key == "bus":
+                m_cost = None
+                m_cost_disp = "Data unavailable"
+                m_cost_type = "unavailable"
+                m_within = None
+                m_note = "Live bus schedule and fare unavailable"
+                m_stops = "Data unavailable"
+            elif m_key == "train":
+                m_cost = None
+                m_cost_disp = "Data unavailable"
+                m_cost_type = "unavailable"
+                m_within = None
+                m_note = "Live train information is not available from the configured API."
+                m_stops = "Data unavailable"
+            elif m_key == "flight":
+                if mode == "flight" and selected_cost is not None:
+                    m_cost = selected_cost
+                    m_cost_disp = f"₹{selected_cost:,}"
+                    m_cost_type = "exact"
+                    m_within = (selected_cost <= budget)
+                else:
+                    m_cost = None
+                    m_cost_disp = "Data unavailable"
+                    m_cost_type = "unavailable"
+                    m_within = None
+                m_note = "Aerial route"
+                m_stops = "Direct / 1 stop"
+
+            comparison.append({
+                "mode": m_key,
+                "label": m_label,
+                "icon": m_icon,
+                "distance_km": m_dist,
+                "distance_display": f"{m_dist:.1f} km" if m_dist is not None else "Data unavailable",
+                "duration_minutes": m_dur,
+                "duration_display": format_minutes(m_dur),
+                "estimated_cost": m_cost,
+                "cost_display": m_cost_disp,
+                "cost_type": m_cost_type,
+                "stops": m_stops,
+                "notes": m_note,
+                "within_budget": m_within
+            })
+
+        # Alternatives that fit budget (other modes)
+        alternatives = [
+            item for item in comparison
+            if item["mode"] != mode and item["within_budget"] is True
+        ]
+
+        labels_dict = {
+            "walking": ("Walking", "🚶"),
+            "van": ("Van", "🚐"),
+            "taxi": ("Taxi / Cab", "🚕"),
+            "bus": ("Bus", "🚌"),
+            "train": ("Train / Railway", "🚆"),
+            "flight": ("Flight / Aeroplane", "✈️")
+        }
+        sel_label, sel_icon = labels_dict.get(mode, (mode.title(), "🚗"))
+
+        return jsonify({
+            "success": True,
+            "from": start["display_name"],
+            "to": destination["display_name"],
+            "mode": mode,
+            "mode_label": sel_label,
+            "icon": sel_icon,
+            "distance_km": selected_distance,
+            "duration_minutes": selected_duration,
+            "duration_display": format_minutes(selected_duration),
+            "estimated_cost": selected_cost,
+            "cost_display": cost_display,
+            "cost_type": cost_type,
+            "price_status": price_status,
+            "budget": round(budget),
+            "remaining": remaining,
+            "within_budget": within_budget,
+            "budget_message": budget_message,
+            "route_notes": route_notes,
+            "nearby_info": nearby_info,
+            "comparison": comparison,
+            "alternatives": alternatives,
+            "reach_by": reach_by,
+            "note": "Distance and duration use real routing and geocoding services. Fares are shown only when genuinely available from configured APIs."
+        })
+
+    except Exception as error:
+        print("JOURNEY PLAN ERROR:", error)
+        return jsonify({
+            "success": False,
+            "error": "An error occurred while planning this journey. Please verify your locations and try again."
+        }), 500
 
 
 # =========================================================
@@ -1450,17 +1523,6 @@ def search_places():
             "error": "SerpApi key is not configured."
         }), 500
 
-    # -----------------------------
-    # GEOCODE MANUAL LOCATION UPFRONT
-    # When no GPS coordinates are provided and a manual location text is given,
-    # geocode it first so we can anchor the SerpApi search to exact coordinates
-    # and return the correct city-center as the authoritative map center.
-    # -----------------------------
-    geocoded_location = None
-    if not (lat and lng) and (location or query):
-        target_for_geocode = location or query
-        geocoded_location = geocode_location(target_for_geocode)
-
     params = {
         "engine": "google_maps",
         "type": "search",
@@ -1469,7 +1531,7 @@ def search_places():
     }
 
     # -----------------------------
-    # CURRENT LOCATION (GPS from browser)
+    # CURRENT LOCATION
     # -----------------------------
     if lat and lng:
         try:
@@ -1483,9 +1545,6 @@ def search_places():
                 "success": False,
                 "error": "Invalid location coordinates."
             }), 400
-    elif geocoded_location:
-        # Anchor search to the geocoded city center
-        params["ll"] = f"@{geocoded_location['lat']},{geocoded_location['lng']},14z"
 
     # -----------------------------
     # OPEN NOW
@@ -1509,12 +1568,11 @@ def search_places():
             if isinstance(place, dict):
                 raw_places.append(place)
 
-        # Fallback: if still 0 results and no coordinates yet, try geocoding
-        if not raw_places and not (lat and lng) and not geocoded_location:
+        # Fallback if 0 results and location or query provided without coordinates
+        if not raw_places and not (lat and lng):
             target_loc = location or query
             geo = geocode_location(target_loc)
             if geo:
-                geocoded_location = geo
                 params["ll"] = f"@{geo['lat']},{geo['lng']},14z"
                 try:
                     fb_resp = requests.get(
@@ -1535,8 +1593,8 @@ def search_places():
         results = []
         for place in raw_places:
             gps = place.get("gps_coordinates") or {}
-            p_latitude = gps.get("latitude")
-            p_longitude = gps.get("longitude")
+            latitude = gps.get("latitude")
+            longitude = gps.get("longitude")
 
             p_type = place.get("type")
             if isinstance(p_type, list):
@@ -1566,23 +1624,21 @@ def search_places():
                 "thumbnail": place.get("thumbnail") or "",
                 "data_id": place.get("data_id") or "",
                 "place_id": place.get("place_id") or "",
-                "latitude": p_latitude,
-                "longitude": p_longitude,
+                "latitude": latitude,
+                "longitude": longitude,
                 "website": place.get("website") or "",
                 "directions": place.get("directions") or "",
                 "street_view_url": (
-                    f"https://www.google.com/maps/@?api=1&map_action=pano&viewpoint={p_latitude},{p_longitude}"
-                    if (p_latitude is not None and p_longitude is not None) else None
+                    f"https://www.google.com/maps/@?api=1&map_action=pano&viewpoint={latitude},{longitude}"
+                    if (latitude is not None and longitude is not None) else None
                 ),
                 "virtual_tour_url": virtual_tour,
                 "satellite_url": (
-                    f"https://www.google.com/maps/@?api=1&map_action=map&center={p_latitude},{p_longitude}&zoom=18&basemap=satellite"
-                    if (p_latitude is not None and p_longitude is not None) else None
+                    f"https://www.google.com/maps/@?api=1&map_action=map&center={latitude},{longitude}&zoom=18&basemap=satellite"
+                    if (latitude is not None and longitude is not None) else None
                 )
             })
 
-        # Build authoritative map-center coordinates:
-        # Priority: 1. Browser GPS  2. Geocoded manual location  3. First result GPS
         coordinates = None
         if lat and lng:
             try:
@@ -1592,39 +1648,17 @@ def search_places():
                 }
             except ValueError:
                 pass
-        elif geocoded_location:
-            # Always use the geocoded city center as map center for manual entries
-            coordinates = {
-                "latitude": geocoded_location["lat"],
-                "longitude": geocoded_location["lng"],
-                "display_name": geocoded_location.get("display_name", "")
-            }
         elif results and results[0].get("latitude") is not None and results[0].get("longitude") is not None:
             coordinates = {
                 "latitude": float(results[0]["latitude"]),
                 "longitude": float(results[0]["longitude"])
             }
 
-        # If no results at all but location was searched, indicate location not found
-        if not results and not geocoded_location and (location or query):
-            return jsonify({
-                "success": True,
-                "query": search_query,
-                "results": [],
-                "coordinates": None,
-                "location_not_found": True
-            })
-
         return jsonify({
             "success": True,
             "query": search_query,
             "results": results,
-            "coordinates": coordinates,
-            "geocoded_location": {
-                "lat": geocoded_location["lat"],
-                "lng": geocoded_location["lng"],
-                "display_name": geocoded_location.get("display_name", "")
-            } if geocoded_location else None
+            "coordinates": coordinates
         })
 
     except requests.RequestException as error:
@@ -1812,7 +1846,7 @@ def local_ai_guide(message):
             "I can help you find nearby taxis. "
             "Use Explore with 'taxi near me' "
             "and allow your current location. "
-            "U Map searches nearby "
+            "NaviSphere searches nearby "
             "taxi/cab listings through SerpApi."
         )
 
@@ -1847,7 +1881,7 @@ def local_ai_guide(message):
         return (
             "Use Compare Your Journey to enter "
             "your starting point and destination. "
-            "U Map calculates road routes, "
+            "NaviSphere calculates road routes, "
             "distance and estimated travel time."
         )
 
@@ -1885,16 +1919,16 @@ def local_ai_guide(message):
 
 
 # =========================================================
-# U MAP AI - FAST GEMINI STREAMING CHAT
+# NAVISPHERE AI - FAST GEMINI STREAMING CHAT
 # =========================================================
 
 # Fast, low-output model for responsive chat.
 # The user sees the first generated chunks as soon as Gemini sends them.
 GEMINI_MODEL = "gemini-3.5-flash-lite"
 
-UMAP_SYSTEM_PROMPT = """
-You are U Map AI, a fast, friendly, general-purpose AI assistant
-inside the U Map website.
+NAVISPHERE_SYSTEM_PROMPT = """
+You are NaviSphere AI, a fast, friendly, general-purpose AI assistant
+inside the NaviSphere website.
 
 Answer the user's actual question directly. You can help with:
 travel planning, destinations, routes, transport, taxis, restaurants,
@@ -1906,10 +1940,10 @@ Keep normal answers concise and useful. Start answering immediately.
 Do not waste words repeating the question or saying you are thinking.
 
 Never invent live location, price, opening hours, availability, distance,
-route, weather, or business information. If U Map has not supplied
+route, weather, or business information. If NaviSphere has not supplied
 live data, clearly say it is an estimate or that live data is unavailable.
 
-You are U Map AI.
+You are NaviSphere AI.
 """
 
 
@@ -1978,7 +2012,7 @@ def ai_chat_stream():
         try:
 
             config = types.GenerateContentConfig(
-                system_instruction=UMAP_SYSTEM_PROMPT,
+                system_instruction=NAVISPHERE_SYSTEM_PROMPT,
                 temperature=0.3,
                 max_output_tokens=350,
                 automatic_function_calling=types.AutomaticFunctionCallingConfig(
@@ -2068,7 +2102,7 @@ def ai_chat():
             model=GEMINI_MODEL,
             contents=contents,
             config=types.GenerateContentConfig(
-                system_instruction=UMAP_SYSTEM_PROMPT,
+                system_instruction=NAVISPHERE_SYSTEM_PROMPT,
                 temperature=0.3,
                 max_output_tokens=350,
                 automatic_function_calling=types.AutomaticFunctionCallingConfig(
@@ -2126,7 +2160,7 @@ def live_token():
                             "parts": [
                                 {
                                     "text": """
-You are U Map AI, a friendly real-time voice assistant.
+You are NaviSphere AI, a friendly real-time voice assistant.
 Help with travel, routes, transport, destinations, restaurants,
 taxis, budgets, local places, and general questions.
 Keep answers natural, short and useful.
@@ -3230,7 +3264,7 @@ def search_hotels():
 
 
 # =========================================================
-# U MAP AI - FOOD THAT FITS YOU (RECOMMENDATIONS & MEAL PLAN)
+# NAVISPHERE AI - FOOD THAT FITS YOU (RECOMMENDATIONS & MEAL PLAN)
 # =========================================================
 
 def build_fallback_food_data(location, food_pref, dietary_pref, health_rest, budget, duration):
@@ -3564,7 +3598,7 @@ def build_fallback_food_data(location, food_pref, dietary_pref, health_rest, bud
             "target_daily_budget": f"₹{budget_num}",
             "estimated_daily_average": f"Estimated: ₹{int(budget_num * 0.9)} - ₹{int(budget_num * 1.05)}",
             "budget_verdict": "Realistic & Well-Balanced for local dining",
-            "disclaimer": f"All listed prices are estimated local price ranges for {loc_clean}. Exact menu pricing and service charges may vary by venue. U Map does not invent exact restaurant rates or guarantee table availability."
+            "disclaimer": f"All listed prices are estimated local price ranges for {loc_clean}. Exact menu pricing and service charges may vary by venue. NaviSphere does not invent exact restaurant rates or guarantee table availability."
         },
         "top_foods": top_foods,
         "meal_plan": meal_plan
@@ -3599,7 +3633,7 @@ def api_food_plan():
 
     # Attempt generation with Gemini if client available
     if gemini_client:
-        prompt = f"""You are an expert culinary travel guide and nutritionist assistant for U Map AI.
+        prompt = f"""You are an expert culinary travel guide and nutritionist assistant for NaviSphere AI.
 Generate personalized "Top Foods to Try" and a complete day-by-day food plan for a traveler.
 
 USER TRAVELER DETAILS:
@@ -3746,7 +3780,7 @@ def api_detect_city():
     if lat and lon:
         try:
             url = f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lon}"
-            res = requests.get(url, headers={"User-Agent": "UMapAI/1.0"}, timeout=4)
+            res = requests.get(url, headers={"User-Agent": "NaviSphere-Food/1.0"}, timeout=4)
             if res.ok:
                 addr = res.json().get("address", {})
                 raw_city = (
@@ -3774,15 +3808,18 @@ def api_detect_city():
             if client_ip and client_ip not in ["127.0.0.1", "localhost", "::1"]:
                 ip_url = f"https://ipapi.co/{client_ip}/json/"
 
-            ip_res = requests.get(ip_url, headers={"User-Agent": "UMapAI/1.0"}, timeout=3)
+            ip_res = requests.get(ip_url, headers={"User-Agent": "NaviSphere-Food/1.0"}, timeout=3)
             if ip_res.ok:
                 city = ip_res.json().get("city")
         except Exception as e:
             print("IP city detection error:", e)
 
+    if not city:
+        city = "Chennai"
+
     return jsonify({
         "success": True,
-        "city": city or ""
+        "city": city
     })
 
 
