@@ -2,5 +2,5 @@ Flask
 requests
 python-dotenv
 google-genai
-google-generativeai 
-gunicorn
+google-auth
+google-auth-httplib2
